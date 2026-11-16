@@ -2,15 +2,16 @@
   "schema": "chaosd6.skill/1",
   "id": "skill_force_shield",
   "name": "Force Shield",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "source": {
     "collection": "skills",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "action_type": "B",
   "is_permanent": true,
   "point_buy_stat": "stat_vitality",
-  "text": "Subtract the Shield permanent die value from effect damage before rounding. Destroy this permanent if effect damage is taken.",
+  "fixed_power": 6,
+  "text": "Permanent, always power 6: no point-buy roll — it lands with power 6 (its Rule 24 power). Subtract the shield's 6 from effect damage before rounding (the first effect-damage hit on you that would land). Destroy this permanent if effect damage is taken.",
   "flags": {
     "action": "B",
     "permanent": true,
@@ -126,8 +127,63 @@
       "note": "the die spent by effect_leg (spent → brokenShield) drops the permanent at the end of the round — peer bookkeeping, no rule left to run"
     },
     "perm_landing": {
-      "call": [
-        "perm_landing"
+      "let": [
+        {
+          "l": {
+            "call": [
+              "perm_landing"
+            ]
+          },
+          "fp": {
+            "get": [
+              {
+                "skill_data": {
+                  "var": "skill"
+                }
+              },
+              "fixed_power"
+            ]
+          }
+        },
+        {
+          "if": [
+            {
+              "and": [
+                {
+                  "var": "l"
+                },
+                {
+                  "===": [
+                    {
+                      "floor": {
+                        "var": "fp"
+                      }
+                    },
+                    {
+                      "var": "fp"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "obj": {
+                "id": {
+                  "var": "l.id"
+                },
+                "stat": {
+                  "var": "l.stat"
+                },
+                "power": {
+                  "var": "fp"
+                }
+              }
+            },
+            {
+              "var": "l"
+            }
+          ]
+        }
       ]
     },
     "perm_stats": {

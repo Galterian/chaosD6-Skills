@@ -2,23 +2,30 @@
   "schema": "chaosd6.skill/1",
   "id": "skill_powerful_attack",
   "name": "Powerful attack",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "source": {
     "collection": "skills",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "action_type": "A",
   "is_permanent": false,
   "point_buy_stat": null,
-  "text": "On successful attack: +1 damage; cannot perform any other action except Attack until end of round.",
+  "text": "On successful attack: +1 damage; cannot perform any other action except Attack until end of round (any other action you plan is played as a bare Empty Posture — no card, no skill, no cast).",
   "flags": {
     "action": "A",
     "permanent": false,
     "negating": false,
     "hooks": [
-      "attack_out"
+      "attack_out",
+      "plan_lock"
     ],
-    "attackBonus": 1
+    "attackBonus": 1,
+    "selfLock": {
+      "codes": [
+        "A"
+      ],
+      "until": "end_of_round"
+    }
   },
   "uses": [
     "skills_std"
@@ -59,6 +66,21 @@
         {
           "var": "dmg"
         }
+      ]
+    },
+    "plan_lock": {
+      "if": [
+        {
+          "bool": {
+            "var": "paid"
+          }
+        },
+        {
+          "quote": [
+            "A"
+          ]
+        },
+        null
       ]
     }
   }

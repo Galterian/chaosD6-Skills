@@ -2,15 +2,15 @@
   "schema": "chaosd6.skill/1",
   "id": "skill_sanctuary",
   "name": "Sanctuary",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "source": {
     "collection": "skills",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "action_type": "B",
   "is_permanent": true,
   "point_buy_stat": "any",
-  "text": "Permanent until doing action. You, any permanent, and any token you control (besides Sanctuary) are invincible until you emit or perform any action.",
+  "text": "Permanent. While it stands you, any permanent and any token you control (besides Sanctuary) are invincible as long as you only move around or rest (Move, Empty Move, Empty Posture): you can reposition and prepare your hand over the next turns. It ends as soon as you perform any other action (Attack, Block, Posture), play a skill or emit (an effect cast or a Rule 24 destroy) — in that action you are no longer protected.",
   "flags": {
     "action": "B",
     "permanent": true,
@@ -22,7 +22,11 @@
       "perm_landing",
       "perm_stats"
     ],
-    "restInvincible": true
+    "invincibleWhile": [
+      "M",
+      "EM",
+      "EP"
+    ]
   },
   "uses": [
     "skills_std"
@@ -45,30 +49,134 @@
               }
             },
             {
-              "===": [
-                {
-                  "??": [
-                    {
-                      "get": [
+              "!": {
+                "let": [
+                  {
+                    "r": {
+                      "call": [
+                        "pair_get",
                         {
-                          "call": [
-                            "pair_get",
+                          "var": "byActor"
+                        },
+                        {
+                          "var": "defender"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "bool": {
+                      "and": [
+                        {
+                          "var": "r"
+                        },
+                        {
+                          "or": [
                             {
-                              "var": "byActor"
+                              "some": [
+                                {
+                                  "if": [
+                                    {
+                                      "===": [
+                                        {
+                                          "??": [
+                                            {
+                                              "var": "r.declared"
+                                            },
+                                            {
+                                              "var": "r.action"
+                                            }
+                                          ]
+                                        },
+                                        "BT"
+                                      ]
+                                    },
+                                    {
+                                      "or": [
+                                        {
+                                          "var": "r.trance"
+                                        },
+                                        []
+                                      ]
+                                    },
+                                    [
+                                      {
+                                        "??": [
+                                          {
+                                            "var": "r.declared"
+                                          },
+                                          {
+                                            "var": "r.action"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                {
+                                  "!": {
+                                    "in": [
+                                      {
+                                        "var": "c"
+                                      },
+                                      [
+                                        "M",
+                                        "EM",
+                                        "EP"
+                                      ]
+                                    ]
+                                  }
+                                },
+                                "c"
+                              ]
                             },
                             {
-                              "var": "defender"
+                              ">": [
+                                {
+                                  "len": {
+                                    "filter": [
+                                      {
+                                        "or": [
+                                          {
+                                            "var": "r.skills"
+                                          },
+                                          []
+                                        ]
+                                      },
+                                      {
+                                        "!==": [
+                                          {
+                                            "var": "id"
+                                          },
+                                          {
+                                            "var": "r.buildingSkill"
+                                          }
+                                        ]
+                                      },
+                                      "id"
+                                    ]
+                                  }
+                                },
+                                0
+                              ]
+                            },
+                            {
+                              "bool": {
+                                "var": "r.effect"
+                              }
+                            },
+                            {
+                              "bool": {
+                                "var": "r.destroy"
+                              }
                             }
                           ]
-                        },
-                        "declared"
+                        }
                       ]
-                    },
-                    "EP"
-                  ]
-                },
-                "EP"
-              ]
+                    }
+                  }
+                ]
+              }
             }
           ]
         },
@@ -79,67 +187,124 @@
       ]
     },
     "end_round": {
-      "bool": {
-        "and": [
-          {
+      "let": [
+        {
+          "r": {
             "var": "reveal"
-          },
-          {
-            "or": [
+          }
+        },
+        {
+          "bool": {
+            "and": [
               {
-                "!==": [
-                  {
-                    "??": [
-                      {
-                        "var": "reveal.declared"
-                      },
-                      {
-                        "var": "reveal.action"
-                      }
-                    ]
-                  },
-                  "EP"
-                ]
+                "var": "r"
               },
               {
-                ">": [
+                "or": [
                   {
-                    "len": {
-                      "filter": [
-                        {
-                          "or": [
+                    "some": [
+                      {
+                        "if": [
+                          {
+                            "===": [
+                              {
+                                "??": [
+                                  {
+                                    "var": "r.declared"
+                                  },
+                                  {
+                                    "var": "r.action"
+                                  }
+                                ]
+                              },
+                              "BT"
+                            ]
+                          },
+                          {
+                            "or": [
+                              {
+                                "var": "r.trance"
+                              },
+                              []
+                            ]
+                          },
+                          [
                             {
-                              "var": "reveal.skills"
-                            },
-                            []
-                          ]
-                        },
-                        {
-                          "!==": [
-                            {
-                              "var": "id"
-                            },
-                            {
-                              "var": "reveal.buildingSkill"
+                              "??": [
+                                {
+                                  "var": "r.declared"
+                                },
+                                {
+                                  "var": "r.action"
+                                }
+                              ]
                             }
                           ]
-                        },
-                        "id"
-                      ]
+                        ]
+                      },
+                      {
+                        "!": {
+                          "in": [
+                            {
+                              "var": "c"
+                            },
+                            [
+                              "M",
+                              "EM",
+                              "EP"
+                            ]
+                          ]
+                        }
+                      },
+                      "c"
+                    ]
+                  },
+                  {
+                    ">": [
+                      {
+                        "len": {
+                          "filter": [
+                            {
+                              "or": [
+                                {
+                                  "var": "r.skills"
+                                },
+                                []
+                              ]
+                            },
+                            {
+                              "!==": [
+                                {
+                                  "var": "id"
+                                },
+                                {
+                                  "var": "r.buildingSkill"
+                                }
+                              ]
+                            },
+                            "id"
+                          ]
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "bool": {
+                      "var": "r.effect"
                     }
                   },
-                  0
+                  {
+                    "bool": {
+                      "var": "r.destroy"
+                    }
+                  }
                 ]
-              },
-              {
-                "bool": {
-                  "var": "reveal.effect"
-                }
               }
             ]
           }
-        ]
-      }
+        }
+      ]
     },
     "perm_landing": {
       "call": [

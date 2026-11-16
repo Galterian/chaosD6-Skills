@@ -71,10 +71,12 @@ export const HOOK_SPECS = Object.freeze({
   negate_action: { engine: 'js', kind: 'pass' },
   negate_kind:   { engine: 'js', kind: 'pass' },
   trance_assign: { engine: 'js', kind: 'pass' },
-  block_in:      { engine: 'data', kind: 'or', args: ['defender'], result: 'any' },
+  block_in:      { engine: 'data', kind: 'or', args: ['defender', 'blocker'], result: 'any' },
   block_cost:    { engine: 'data', kind: 'max', args: ['attacker', 'defender'], result: 'number' },
+  attack_range:  { engine: 'data', kind: 'max', args: ['attacker', 'code'], result: 'number' },
   attack_out:    { engine: 'data', kind: 'chain', chain: 'dmg', args: ['attacker', 'dmg'], result: 'number' },
   attack_target: { engine: 'data', kind: 'or', args: ['attacker', 'defender'], result: 'any' },
+  attack_vs_block: { engine: 'data', kind: 'or', args: ['attacker', 'defender'], result: 'any' },
   defend_in:     { engine: 'data', kind: 'chain', chain: 'dmg', args: ['code', 'defender', 'dmg', 'byActor'], result: 'number' },
   damage_in:     { engine: 'data', kind: 'edit', args: ['damage'], result: 'edit' },
   effect_in:     { engine: 'data', kind: 'first', args: ['defender'], result: 'number' },
@@ -83,19 +85,23 @@ export const HOOK_SPECS = Object.freeze({
   perm_landing:  { engine: 'data', kind: 'each', std: true, args: ['skillIds', 'playedCodes', 'stats'], result: 'landing' },
   perm_stats:    { engine: 'data', kind: 'single', std: true, args: [], result: 'stats' },
   disposition:   { engine: 'data', kind: 'single', std: true, args: ['fx', 'self'], result: 'disposition' },
+  plan_lock:     { engine: 'data', kind: 'single', args: ['paid'], result: 'codes' },
 });
 export const HOOK_NAMES = Object.freeze(Object.keys(HOOK_SPECS));
 export const DATA_HOOKS = Object.freeze(HOOK_NAMES.filter(h => HOOK_SPECS[h].engine === 'data'));
 export const JS_HOOKS = Object.freeze(HOOK_NAMES.filter(h => HOOK_SPECS[h].engine === 'js'));
 const STATS = ['vitality', 'world', 'matter', 'will'];
 const DISPOSITIONS = ['permanent', 'negated', 'countered', 'spent', 'unused', 'judge'];
+const CODES = ['A', 'B', 'M', 'P', 'EM', 'EP'];
 
 // The value a hook has when no program applies (or a program fails): what the JS hook returns for a skill
 // that is not in play.
 export function neutralOf(hookName, args = {}) {
   switch (hookName) {
-    case 'block_in': case 'attack_target': case 'end_round': case 'rides': case 'plan_target': return false;
+    case 'block_in': case 'attack_target': case 'attack_vs_block': case 'end_round': case 'rides': case 'plan_target': return false;
     case 'block_cost': case 'effect_in': return 0;
+    case 'attack_range': return 1;
+    case 'plan_lock': return null;
     case 'attack_out': case 'defend_in': return args.dmg;
     case 'effect_leg': return { shield: args.shield, sum: args.sum, spent: 0 };
     case 'perm_stats': return ['vitality'];
@@ -111,9 +117,10 @@ export function resultOk(hookName, v) {
   switch (HOOK_SPECS[hookName]?.result) {
     case 'number': return isNum(v);
     case 'leg': return isObj(v) && isNum(v.shield) && isNum(v.sum) && isNum(v.spent);
-    case 'landing': return v === null || v === undefined || (isObj(v) && typeof v.id === 'string' && STATS.includes(v.stat));
+    case 'landing': return v === null || v === undefined || (isObj(v) && typeof v.id === 'string' && STATS.includes(v.stat) && (v.power === undefined || (Number.isInteger(v.power) && v.power >= 1 && v.power <= 6)));
     case 'stats': return Array.isArray(v) && v.length > 0 && v.every(s => STATS.includes(s));
     case 'disposition': return DISPOSITIONS.includes(v);
+    case 'codes': return v === null || (Array.isArray(v) && v.length > 0 && v.every(c => CODES.includes(c)));
     case 'edit': return isObj(v) && Array.isArray(v.edits) && Array.isArray(v.fx)
       && v.edits.every(e => isObj(e) && typeof e.victim === 'string' && Number.isInteger(e.i) && e.i >= 0 && isNum(e.amount))
       && v.fx.every(f => isObj(f) && typeof f.by === 'string' && typeof f.skill === 'string' && typeof f.what === 'string');

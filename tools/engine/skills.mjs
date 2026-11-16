@@ -15,6 +15,7 @@
 //   reveals, byActorPre                   the action's reveals (live array) and actor → reveal Map
 //   effAction, tranceOpts, noMove,        resolver registers (Map id → code, Map id → [codes], Set id,
 //   counterPen, skillFx                   Map id → {elem: amount}, [fx records])
+//   noEmit, swaps (optional)              Set id (Disruption voids the emission), [{by, on}] (Overrun swap) — 2026-11-16
 //   codeIs(id, c), replace(id, from, to)  the resolver's trance-aware code test / rewrite
 //   enemyOf, hiddenFrom, dist, lifeOf     queries (dist = hex distance of the snapshot tiles)
 //   view(id), viewValues()                snapshot of one peer / all snapshots (iteration order = view order)
@@ -34,17 +35,17 @@ export const TRANCE = 'skill_battle_trance';
 //   negating    judged by whether it did its job, not by the damage counterfactual (user ruling 2026-11-12)
 //   hooks       the hook points it acts in (see HOOKS.md)
 export const SKILL_RULES = {
-  skill_powerful_attack: { action: 'A', permanent: false, negating: false, hooks: ['attack_out'], attackBonus: 1 },
+  skill_powerful_attack: { action: 'A', permanent: false, negating: false, hooks: ['attack_out', 'plan_lock'], attackBonus: 1 },
   skill_overrun:         { action: 'A', permanent: false, negating: true, hooks: ['negate_kind', 'move'], range: 1, negates: ['M', 'EM'] },
   skill_grapple:         { action: 'A', permanent: false, negating: true, hooks: ['negate_kind'], negates: ['P'] },
-  skill_ranged_weapon:   { action: 'A', permanent: true, pointBuyStat: 'matter', negating: false, hooks: ['block_in', 'block_cost', 'perm_landing', 'perm_stats'] },
-  skill_taunt:           { action: 'B', permanent: true, pointBuyStat: 'vitality', negating: false, hooks: ['attack_target', 'perm_landing', 'perm_stats'], range: 1 },
+  skill_ranged_weapon:   { action: 'A', permanent: true, pointBuyStat: 'matter', negating: false, hooks: ['block_in', 'block_cost', 'attack_range', 'perm_landing', 'perm_stats'], range: 2 },
+  skill_taunt:           { action: 'B', permanent: true, pointBuyStat: 'vitality', negating: false, hooks: ['block_in', 'attack_target', 'attack_vs_block', 'perm_landing', 'perm_stats'], range: 1 },
   skill_barricade:       { action: 'B', permanent: true, pointBuyStat: 'vitality', negating: false, hooks: ['defend_in', 'perm_landing', 'perm_stats'], negates: ['A', 'B'] },
   skill_sanctuary:       { action: 'B', permanent: true, pointBuyStat: 'any', negating: false, hooks: ['defend_in', 'end_round', 'perm_landing', 'perm_stats'] },
   skill_dodge:           { action: 'M', permanent: false, negating: true, hooks: ['damage_in'], damageOff: 1 },
   skill_bluff:           { action: 'M', permanent: false, negating: true, hooks: ['negate_action'], range: 1 },
   skill_intimidation:    { action: 'P', permanent: false, negating: true, hooks: ['negate_action'], range: 1, negates: ['A'] },
-  skill_disruption_move: { action: 'M', permanent: false, negating: true, hooks: ['negate_kind'], negates: ['P'] },
+  skill_disruption_move: { action: 'M', permanent: false, negating: true, hooks: ['negate_kind'], negates: ['P', 'EP'] },
   skill_battle_trance:   { action: 'P', permanent: false, negating: false, trance: true, hooks: ['plan', 'trance_assign'] },
   skill_force_shield:    { action: 'B', permanent: true, pointBuyStat: 'vitality', negating: false, hooks: ['effect_in', 'effect_leg', 'end_round', 'perm_landing', 'perm_stats'] },
   skill_counter_spell:   { action: 'P', permanent: false, negating: true, keepsTarget: true, hooks: ['plan_target', 'counter_pre'], range: 1 },
@@ -191,17 +192,47 @@ function negateAction(ctx) {
 }
 
 // ---- hook: negate_kind (pass 2 — prohibitions on one kind of action: Grapple, Disruption Move, Overrun) --
+// Optional registers (the resolver passes them once its call sites know them — `SKR` hunks in peer.mjs; without
+// them the two paper clauses below stay off, everything else is unchanged):
+//   ctx.noEmit  Set id    Disruption: this actor's non-instant effect emits nothing this action (resolver voids it)
+//   ctx.swaps   [{by, on}] Overrun: the attacker and its adjacent target trade hexes (resolver, after the moves)
 function negateKind(ctx) {
-  const { byActorPre, noMove } = ctx;
-  const { has, negate, foeFor } = helpers(ctx);
+  const { byActorPre, noMove, skillFx } = ctx;
+  const { has, negate, foeFor, fromBuilding } = helpers(ctx);
   for (const r of ctx.reveals) {
     if (!(r.skills || []).length) continue;
     const me = r.actor, rides = ridesFor(r);
     if (rides('A') && has(me, 'skill_grapple')) { const t = foeFor(r); if (t && ctx.codeIs(t, 'P')) { ctx.replace(t, 'P', 'EP'); negate(me, 'skill_grapple', byActorPre.get(t), 'P'); } }
-    if (rides('M') && has(me, 'skill_disruption_move')) { const t = foeFor(r); if (t && ctx.codeIs(t, 'P')) { ctx.replace(t, 'P', 'EP'); negate(me, 'skill_disruption_move', byActorPre.get(t), 'P'); } }
+    // Disruption Move (paper text, user ruling 2026-11-16): "the enemy cannot use Posture; any Empty Posture is always
+    // played as Empty Move (enemy cannot emit non-instant effects)". The enemy's Posture is negated (card + riders back
+    // to their hand) and played as an Empty Move; an Empty Posture becomes an Empty Move too. That Empty Move goes
+    // nowhere (noMove — a Posture keeps no tile) and emits nothing: a non-instant effect riding on it is voided
+    // (noEmit), so a cast in progress is interrupted (Rule 19). An Empty Posture turned only counts as the skill's job
+    // when it stopped such an emission.
+    if (rides('M') && has(me, 'skill_disruption_move')) {
+      const t = foeFor(r);
+      if (t && ctx.enemyOf(me, t) && (ctx.codeIs(t, 'P') || ctx.codeIs(t, 'EP'))) {
+        const o = byActorPre.get(t), wasP = ctx.codeIs(t, 'P');
+        const voids = !!ctx.noEmit && !!o?.effect && !o.effect.is_instant;
+        ctx.replace(t, 'P', 'EM'); ctx.replace(t, 'EP', 'EM');
+        if (!ctx.tranceOpts.has(t)) noMove.add(t);
+        if (voids) ctx.noEmit.add(t);
+        if (wasP) negate(me, 'skill_disruption_move', o, 'P');
+        else if (voids) skillFx.push({ by: me, skill: 'skill_disruption_move', on: t, what: 'EP', building: fromBuilding(me, 'skill_disruption_move') });
+      }
+    }
+    // Overrun: the adjacent target cannot move (its Move is negated); paper text (ruling 2026-11-16): "swap places with
+    // the enemy (walk over them and go behind)" — the attacker of a character-targeted Attack trades hexes with that
+    // enemy (ctx.swaps, applied by the resolver after the moves). One swap per unit and action, actor order.
     if (rides('A') && has(me, 'skill_overrun')) {
       const t = foeFor(r);
-      if (t && ctx.dist(me, t) <= 1) { const mv = ctx.codeIs(t, 'M') ? 'M' : ctx.codeIs(t, 'EM') ? 'EM' : null; noMove.add(t); if (mv) negate(me, 'skill_overrun', byActorPre.get(t), mv); }
+      if (t && ctx.dist(me, t) <= 1) {
+        const mv = ctx.codeIs(t, 'M') ? 'M' : ctx.codeIs(t, 'EM') ? 'EM' : null; noMove.add(t); if (mv) negate(me, 'skill_overrun', byActorPre.get(t), mv);
+        if (ctx.swaps && ctx.enemyOf(me, t) && r.target?.kind !== 'tile' && !ctx.swaps.some(s => [s.by, s.on].includes(me) || [s.by, s.on].includes(t))) {
+          ctx.swaps.push({ by: me, on: t });
+          if (!mv) skillFx.push({ by: me, skill: 'skill_overrun', on: t, what: 'swap', building: fromBuilding(me, 'skill_overrun') });
+        }
+      }
     }
   }
 }
@@ -249,23 +280,51 @@ function tranceAssign(ctx, { byActor, codeVs, attacksOn }) {
 }
 
 // ---- hooks on one strike (combat damage) ---------------------------------------------------------------
-// block_in (Ranged Weapon): a Block scores against Attacks aimed at the blocker — except a ranged attacker,
-// who is out of reach. Returns true when the Block does NOT score.  args: { defender } (the attacker whose
-// Attack the Block meets holds the permanent).
-const blockIn = (ctx, { defender }) => ctx.hasPerm(defender, 'skill_ranged_weapon');
-// block_cost (Ranged Weapon, Reaver auto-target): 1 when the candidate Blocks and I am not ranged.
-const blockCost = (ctx, { attacker, defender }) => ctx.codeIs(defender, 'B') && !ctx.hasPerm(attacker, 'skill_ranged_weapon') ? 1 : 0;
+const RW = 'skill_ranged_weapon', TAUNT = 'skill_taunt';
+const rangeOf = (id) => SKILL_RULES[id]?.range ?? 1;
+// block_in (Ranged Weapon, Taunt): a Block scores against Attacks aimed at the blocker. Returns true when the Block
+// does NOT score.  args: { defender (the unit whose Attack the Block meets), blocker }.
+//   Ranged Weapon (ruling 2026-11-16): an enemy Block opposed to the holder's Attack from 2 hexes away deals the
+//     holder nothing; an adjacent Block deals its regular 1 ("no bonuses on a nearby enemy").
+//   Taunt (paper text, ruling 2026-11-16): a nearby enemy cannot use Block against the taunter.
+// skillId names the one skill asked (peer.mjs before the SKR hunks asks Ranged Weapon only); null = both, deal order.
+const rangedBlockIn = (ctx, { defender, blocker }) => !!(ctx.hasPerm(defender, RW) && ctx.dist(blocker, defender) > 1);
+const tauntBlockIn = (ctx, { defender, blocker }) => !!(ctx.hasPerm(defender, TAUNT) && ctx.enemyOf(blocker, defender) && ctx.dist(blocker, defender) <= rangeOf(TAUNT));
+const blockIn = (ctx, args, id) => id === RW ? rangedBlockIn(ctx, args) : id === TAUNT ? tauntBlockIn(ctx, args) : (rangedBlockIn(ctx, args) || tauntBlockIn(ctx, args));
+// block_cost (Ranged Weapon, Reaver auto-target): 1 when the candidate Blocks — unless I am ranged and it stands
+// beyond contact (an adjacent Block costs a ranged attacker like anyone, ruling 2026-11-16).
+const blockCost = (ctx, { attacker, defender }) => ctx.codeIs(defender, 'B') && !(ctx.hasPerm(attacker, RW) && ctx.dist(attacker, defender) > 1) ? 1 : 0;
+// attack_range (Ranged Weapon, ruling 2026-11-16: "+1 range"): how far a strike of `code` by `attacker` reaches —
+// the holder's Attack 2 hexes (flag range), everything else 1 (contact).  args: { attacker, code } → hexes.
+const attackRange = (ctx, { attacker, code }) => (code === 'A' && ctx.hasPerm(attacker, RW)) ? rangeOf(RW) : 1;
 // attack_out (Powerful Attack): +1 on an Attack that connects.  args: { attacker, dmg } → dmg.
 const attackOut = (ctx, { attacker, dmg }) => (dmg >= 1 && helpers(ctx).has(attacker, 'skill_powerful_attack')) ? dmg + 1 : dmg;
-// attack_target (Taunt): a nearby taunter is the only legal Attack target. Only revealers count — their
-// snapshots ride in the reveal, so every peer sees the same set.  args: { attacker, defender } → true = 0 dmg.
+// attack_target (Taunt): a nearby taunter is the only legal Attack target — every enemy next to the taunter, every ally
+// it attacks is protected. Only revealers count — their snapshots ride in the reveal, so every peer sees the same set.
+// args: { attacker, defender } → true = 0 dmg.
 const attackTarget = (ctx, { attacker, defender }) => ctx.reveals.some(t => t.actor !== defender && t.actor !== attacker
   && ctx.enemyOf(attacker, t.actor) && ctx.hasPerm(t.actor, 'skill_taunt') && ctx.dist(attacker, t.actor) <= 1);
-// defend_in (Barricade, then Sanctuary): Barricade stops Attack / Block damage; a Sanctuary holder resting
-// on the Empty Posture it declared takes none.  args: { code, defender, dmg, byActor } → dmg.
+// attack_vs_block (Taunt, paper text "nearby enemies cannot use Block against you"): the defender's Block does not
+// count against the taunter's Attack — it lands as against an Empty action (matrix A vs EP = 1, not A vs B = 0).
+// args: { attacker, defender } → true = ignore the Block.
+const attackVsBlock = (ctx, { attacker, defender }) => !!(ctx.hasPerm(attacker, TAUNT) && ctx.enemyOf(attacker, defender) && ctx.dist(attacker, defender) <= rangeOf(TAUNT));
+// defend_in (Barricade, then Sanctuary): Barricade stops Attack / Block damage; a Sanctuary holder takes none while
+// its action does not end the Sanctuary (below).  args: { code, defender, dmg, byActor } → dmg. code 'effect' = effect
+// damage (only Sanctuary acts on it).
 const barricade = (ctx, { code, defender, dmg }) => ((code === 'A' || code === 'B') && ctx.hasPerm(defender, 'skill_barricade')) ? 0 : dmg;
-const restingInSanctuary = (ctx, id, byActor) => ctx.hasPerm(id, 'skill_sanctuary') && (byActor.get(id)?.declared ?? 'EP') === 'EP';
-const sanctuary = (ctx, { defender, dmg, byActor }) => restingInSanctuary(ctx, defender, byActor) ? 0 : dmg;
+// Sanctuary (user ruling 2026-11-16: "you should be able to move around and prepare your hand in the next turns being
+// invincible"; paper: "invincible until you emit or perform any action"): it holds while the holder only moves or
+// rests — Move, Empty Move, Empty Posture — with no skill (a building's free skill excepted), no effect and no
+// Rule 24 destroy emission. Anything else (Attack, Block, Posture, a Battle Trance option among them, a skill, an
+// emission) ends it, and in that action the holder is already unprotected. A unit without a reveal rests.
+const SANCTUARY_KEEPS = ['M', 'EM', 'EP'];
+export function sanctuaryBreaks(r) {
+  if (!r) return false;
+  const d = r.declared ?? r.action;
+  const codes = d === 'BT' ? (r.trance || []) : [d];
+  return codes.some(c => !SANCTUARY_KEEPS.includes(c)) || (r.skills || []).filter(id => id !== r.buildingSkill).length > 0 || !!r.effect || !!r.destroy;
+}
+const sanctuary = (ctx, { defender, dmg, byActor }) => (ctx.hasPerm(defender, 'skill_sanctuary') && !sanctuaryBreaks(byActor.get(defender))) ? 0 : dmg;
 const defendIn = (ctx, args) => sanctuary(ctx, { ...args, dmg: barricade(ctx, args) });
 
 // ---- hook: damage_in (Dodge) ---------------------------------------------------------------------------
@@ -288,13 +347,13 @@ const effectIn = (ctx, { defender }) => ctx.hasPerm(defender, 'skill_force_shiel
 const effectLeg = (_ctx, { shield, sum }) => (shield && roundHalfUp10(sum) > 0) ? { shield: 0, sum: Math.max(0, sum - shield), spent: shield } : { shield, sum, spent: 0 };
 
 // ---- hooks after the action (end_round, perm_landing) --------------------------------------------------
-// end_round (Sanctuary): it lasts while I rest — declaring anything but the plain Empty Posture (another
-// action, a trance, a skill riding on the EP other than a building's, an effect) ends it from the next
-// round.  args: { reveal } (my reveal after resolution) → true = the Sanctuary permanent falls.
-const leftSanctuary = (_ctx, { reveal: myR }) => !!myR && ((myR.declared ?? myR.action) !== 'EP' || (myR.skills || []).filter(id => id !== myR.buildingSkill).length > 0 || !!myR.effect);
+// end_round (Sanctuary): it holds while I only move or rest (sanctuaryBreaks above — ruling 2026-11-16); an action
+// that breaks it ends it from the next action.  args: { reveal } (my reveal after resolution) → true = it falls.
+const leftSanctuary = (_ctx, { reveal: myR }) => sanctuaryBreaks(myR);
 // perm_landing: the permanent skills I played that take hold (a trance only lands those whose action
-// code was played), each with the stat its Rule 12 point-buy uses ('any' = my best stat, first on ties).
-// args: { skillIds, playedCodes (Set|null), stats ({vitality, …}) } → [{ id, stat }] in skillIds order.
+// code was played), each with the stat its Rule 12 point-buy uses ('any' = my best stat, first on ties) and,
+// when the skill's data has `fixed_power` (Force Shield: "always power 6", ruling 2026-11-16), that power — no roll.
+// args: { skillIds, playedCodes (Set|null), stats ({vitality, …}) } → [{ id, stat[, power] }] in skillIds order.
 function permLanding(ctx, { skillIds, playedCodes, stats }) {
   const out = [];
   for (const id of skillIds || []) {
@@ -303,11 +362,16 @@ function permLanding(ctx, { skillIds, playedCodes, stats }) {
       const st = sd.point_buy_stat === 'any'
         ? ['vitality', 'world', 'matter', 'will'].sort((a, b) => stats[b] - stats[a])[0]
         : (sd.point_buy_stat || 'stat_vitality').replace(/^stat_/, '');
-      out.push({ id, stat: st });
+      out.push(Number.isInteger(sd.fixed_power) ? { id, stat: st, power: sd.fixed_power } : { id, stat: st });
     }
   }
   return out;
 }
+// plan_lock (Powerful Attack, paper text, ruling 2026-11-16: "cannot perform any other action except Attack until end
+// of round"): the action codes I may still play this round after the skill paid off (its card did not return to my
+// hand), else null.  args: { paid } → ['A'] | null. Applied at planning by peer.mjs (SKR hunk).
+const PLAN_LOCKS = { skill_powerful_attack: ['A'] };
+const planLock = (id, { paid }) => (paid && PLAN_LOCKS[id]) ? [...PLAN_LOCKS[id]] : null;
 // perm_stats (Rule 24): the stats a permanent skill can be destroyed by (point_buy_stat; 'any' = all four;
 // none → vitality).
 const permStats = (ctx, id) => { const st = sdOf(ctx, id)?.point_buy_stat; return st === 'any' ? ['vitality', 'world', 'matter', 'will'] : st ? [st.replace(/^stat_/, '')] : ['vitality']; };
@@ -340,10 +404,12 @@ const HOOKS = {
   negate_action: (_id, ctx) => negateAction(ctx),
   negate_kind: (_id, ctx) => negateKind(ctx),
   trance_assign: (_id, ctx, args) => tranceAssign(ctx, args),
-  block_in: (_id, ctx, args) => blockIn(ctx, args),
+  block_in: (id, ctx, args) => blockIn(ctx, args, id),
   block_cost: (_id, ctx, args) => blockCost(ctx, args),
+  attack_range: (_id, ctx, args) => attackRange(ctx, args),
   attack_out: (_id, ctx, args) => attackOut(ctx, args),
   attack_target: (_id, ctx, args) => attackTarget(ctx, args),
+  attack_vs_block: (_id, ctx, args) => attackVsBlock(ctx, args),
   defend_in: (id, ctx, args) => id === 'skill_barricade' ? barricade(ctx, args) : id === 'skill_sanctuary' ? sanctuary(ctx, args) : defendIn(ctx, args),
   damage_in: (_id, ctx, args) => damageIn(ctx, args),
   effect_in: (_id, ctx, args) => effectIn(ctx, args),
@@ -352,6 +418,7 @@ const HOOKS = {
   perm_landing: (_id, ctx, args) => permLanding(ctx, args),
   perm_stats: (id, ctx) => permStats(ctx, id),
   disposition: (id, ctx, args) => disposition(ctx, id, args),
+  plan_lock: (id, _ctx, args) => planLock(id, args),
 };
 export const HOOK_NAMES = Object.keys(HOOKS);
 export function skillHook(hookName, skillId, ctx, args = {}) {

@@ -2,16 +2,16 @@
   "schema": "chaosd6.skill/1",
   "id": "skill_ranged_weapon",
   "name": "Ranged weapon",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "source": {
     "collection": "skills",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "action_type": "A",
   "is_permanent": true,
   "point_buy_stat": "stat_matter",
   "element": "elem_fire",
-  "text": "Permanent. On your Attack action, enemy's Block action does not cause you combat damage. Your Attack action does not trigger traps and the follow rule is not applied.",
+  "text": "Permanent. +1 range: your Attack action is opposed to an enemy's action from 2 hexes away; there the enemy's Block deals you no combat damage and a Move or Posture with no contact does nothing to you. Against an adjacent enemy it gives no bonus: your Attack resolves as a plain Attack (a nearby Block deals you its regular 1 damage). Your Attack action does not trigger traps and the follow rule is not applied.",
   "flags": {
     "action": "A",
     "permanent": true,
@@ -20,10 +20,12 @@
     "hooks": [
       "block_in",
       "block_cost",
+      "attack_range",
       "perm_landing",
       "perm_stats"
     ],
-    "blockImmune": true,
+    "range": 2,
+    "reach": 2,
     "trapImmune": true
   },
   "uses": [
@@ -31,14 +33,35 @@
   ],
   "hooks": {
     "block_in": {
-      "has_perm": [
-        {
-          "var": "defender"
-        },
-        {
-          "var": "skill"
-        }
-      ]
+      "bool": {
+        "and": [
+          {
+            "has_perm": [
+              {
+                "var": "defender"
+              },
+              {
+                "var": "skill"
+              }
+            ]
+          },
+          {
+            ">": [
+              {
+                "dist": [
+                  {
+                    "var": "blocker"
+                  },
+                  {
+                    "var": "defender"
+                  }
+                ]
+              },
+              1
+            ]
+          }
+        ]
+      }
     },
     "block_cost": {
       "if": [
@@ -55,12 +78,31 @@
             {
               "!": {
                 "bool": {
-                  "has_perm": [
+                  "and": [
                     {
-                      "var": "attacker"
+                      "has_perm": [
+                        {
+                          "var": "attacker"
+                        },
+                        {
+                          "var": "skill"
+                        }
+                      ]
                     },
                     {
-                      "var": "skill"
+                      ">": [
+                        {
+                          "dist": [
+                            {
+                              "var": "attacker"
+                            },
+                            {
+                              "var": "defender"
+                            }
+                          ]
+                        },
+                        1
+                      ]
                     }
                   ]
                 }
@@ -70,6 +112,43 @@
         },
         1,
         0
+      ]
+    },
+    "attack_range": {
+      "if": [
+        {
+          "and": [
+            {
+              "===": [
+                {
+                  "var": "code"
+                },
+                "A"
+              ]
+            },
+            {
+              "bool": {
+                "has_perm": [
+                  {
+                    "var": "attacker"
+                  },
+                  {
+                    "var": "skill"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "skill_flag": [
+            {
+              "var": "skill"
+            },
+            "range"
+          ]
+        },
+        1
       ]
     },
     "perm_landing": {

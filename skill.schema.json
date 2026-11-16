@@ -5,7 +5,7 @@
   "description": "Structural schema. Semantic checks (known hooks, known operations of the skill vocabulary, known subroutines, JS markers only on built-ins) are done by skill-engine.mjs#validateSkillDef / validateSkillLib (skills.mjs#validateSkillDef); see SCHEMA.md.",
   "oneOf": [{ "$ref": "#/$defs/skill" }, { "$ref": "#/$defs/lib" }],
   "$defs": {
-    "hookName": { "enum": ["rides", "plan_target", "counter_pre", "negate_action", "negate_kind", "trance_assign", "block_in", "block_cost", "attack_out", "attack_target", "defend_in", "damage_in", "effect_in", "effect_leg", "end_round", "perm_landing", "perm_stats", "disposition"] },
+    "hookName": { "enum": ["rides", "plan_target", "counter_pre", "negate_action", "negate_kind", "trance_assign", "block_in", "block_cost", "attack_range", "attack_out", "attack_target", "attack_vs_block", "defend_in", "damage_in", "effect_in", "effect_leg", "end_round", "perm_landing", "perm_stats", "disposition", "plan_lock"] },
     "logic": {
       "description": "A program in the effects' JsonLogic dialect (effects-data/SCHEMA.md): a primitive, an array (evaluated element-wise) or an object with exactly ONE key (the operation).",
       "anyOf": [
@@ -38,6 +38,7 @@
         "action_type": { "enum": ["A", "M", "B", "P"], "description": "The action card it rides on (M / P also ride on EM / EP)." },
         "is_permanent": { "type": "boolean" },
         "point_buy_stat": { "enum": ["stat_vitality", "stat_world", "stat_matter", "stat_will", "any", null], "description": "Rule 12 / 24 stat of a permanent; null for an instant." },
+        "fixed_power": { "type": "integer", "minimum": 1, "maximum": 6, "description": "Permanent only: lands with this Rule 24 power, no point-buy roll (Force Shield = 6, ruling 2026-11-16)." },
         "element": { "type": "string", "description": "Optional element (data/skills.json), documentation." },
         "text": { "type": "string" },
         "flags": {

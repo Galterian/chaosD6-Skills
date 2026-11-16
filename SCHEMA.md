@@ -74,25 +74,29 @@ built-in with a program, in deal order), then registered foreign skills in id or
 | `negate_action` | **js** | pass | — (edits `effAction/tranceOpts`, `o.skills`, `skillFx`) | — | |
 | `negate_kind` | **js** | pass | — (edits codes, `noMove`, `skillFx`) | — | |
 | `trance_assign` | **js** | pass | — (writes `r.vs`, `r.played`) | — | |
-| `block_in` | data | or | `defender` | truthy = the Block deals nothing | |
+| `block_in` | data | or | `defender, blocker` | truthy = the Block deals nothing | |
 | `block_cost` | data | max | `attacker, defender` | number | |
+| `attack_range` | data | max | `attacker, code` | hexes the strike reaches (neutral 1) | |
 | `attack_out` | data | chain `dmg` | `attacker, dmg` | dmg | |
 | `attack_target` | data | or | `attacker, defender` | truthy = this Attack deals 0 | |
+| `attack_vs_block` | data | or | `attacker, defender` | truthy = the defender's Block does not count against this Attack | |
 | `defend_in` | data | chain `dmg` | `code, defender, dmg, byActor` (pairs id → reveal with `declared`) | dmg | |
 | `damage_in` | data | edit | `damage` (pairs victim → `[{source, amount, attacker}]`) | `{edits: [{victim, i, amount}], fx: [skillFx records]}` — the dispatcher sets `damage[victim][i].amount` and pushes `fx`, in order | |
 | `effect_in` | data | first | `defender` | the shield die (0 = none) | |
 | `effect_leg` | data | single | `shield, sum` | `{shield, sum, spent}` | |
 | `end_round` | data | single | `reveal` (my reveal) | bool: Sanctuary falls | |
-| `perm_landing` | data | each id of `skillIds` | `skillIds, playedCodes (array or null), stats` + `skill` = that id | `{id, stat}` or null (nulls dropped) | `perm_landing` |
+| `perm_landing` | data | each id of `skillIds` | `skillIds, playedCodes (array or null), stats` + `skill` = that id | `{id, stat[, power]}` or null (nulls dropped; `power` 1–6 = a fixed landing power, no roll) | `perm_landing` |
 | `perm_stats` | data | single | — | `[stat…]` | `perm_stats` |
 | `disposition` | data | single | `fx, self` | `permanent · negated · countered · spent · unused · judge` | `disposition` |
+| `plan_lock` | data | single | `paid` | the action codes still allowed this round, or null (neutral) | |
 
 A result of the wrong shape (e.g. a string from `attack_out`) is replaced by the neutral value. Force Shield's
 `end_round` is marked `{"engine": "js", "impl": "peer.mjs#endRound"}`: the falling of a spent shield is peer
 bookkeeping (the die spent by `effect_leg`), there is no rule left to run.
 
-**Data / JS split (S2):** data — `rides, plan_target, block_in, block_cost, attack_out, attack_target, defend_in,
-damage_in, effect_in, effect_leg, end_round, perm_landing, perm_stats, disposition`; JS — `counter_pre, negate_action,
+**Data / JS split (S2):** data — `rides, plan_target, block_in, block_cost, attack_range, attack_out, attack_target,
+attack_vs_block, defend_in, damage_in, effect_in, effect_leg, end_round, perm_landing, perm_stats, disposition, plan_lock`
+(attack_range, attack_vs_block, plan_lock and block_in's `blocker`: SKILL REBALANCE 2026-11-16); JS — `counter_pre, negate_action,
 negate_kind, trance_assign` (Counter Spell, Bluff, Intimidation, Grapple, Disruption Move, Overrun, Battle Trance).
 
 ### Moving the pass hooks to data (next milestone)

@@ -168,34 +168,39 @@
     "caps": {
       "attack_bonus": 2,
       "damage_off": 2,
-      "negate_codes": 5
+      "negate_codes": 5,
+      "reach": 3,
+      "fixed_power": 6,
+      "keep_codes": 5
     },
     "audit": true,
     "audit_pairs": 12,
-    "audit_slack": 0.02
+    "audit_slack": 0.000001,
+    "audit_slack_note": "the audit enumerates exactly (no sampling noise): the slack only absorbs float rounding"
   },
-  "duel_note": "The unit of value is one action of an adjacent duel: me vs one foe, plus — with ally_present — one ally (plays Empty Posture) adjacent to the foe. The foe's code Y ~ mix.foe, my code is the skill's action_type (instants), ~ mix.self (a permanent's later actions), Empty Posture (Sanctuary) or two draws of mix.self (Battle Trance). The foe aims its Attack / Move at the ally with ally_target_rate, carries a non-permanent skill with foe_skill_rate (worth foe_skill_value to them), and when on P / EP casts a damage effect (ref_cast_elements, delta damage) with foe_cast_rate. Every (me, foe) ordered pair of the pool is enumerated exactly.",
+  "duel_note": "The unit of value is one action of a duel: me vs one foe (adjacent; for a skill with reach also 2 hexes apart), plus — with ally_present — one ally (plays Empty Posture) adjacent to both. The foe's code Y and my code (a permanent's later actions; Battle Trance's two options) are uniform over the six codes (mix); an instant is played on its action_type; Sanctuary's actions are the codes that keep it. The foe aims its Attack / Move at the ally with ally_target_rate, carries a non-permanent skill with foe_skill_rate (worth foe_skill_value to them), and when on P / EP casts a damage effect (ref_cast_elements, delta damage) with foe_cast_rate. Every (me, foe) ordered pair of the pool is enumerated exactly.",
   "mix": {
+    "note": "user ruling 2026-11-16: \"the basic actions are not measurable\" — no guessed mix, equal weights over the six action codes (A, M, B, P, EM, EP) for the foe and for my own later actions",
     "foe": {
-      "A": 0.3,
-      "M": 0.15,
-      "B": 0.15,
-      "P": 0.2,
-      "EM": 0.05,
-      "EP": 0.15
+      "A": 0.16666666666666666,
+      "M": 0.16666666666666666,
+      "B": 0.16666666666666666,
+      "P": 0.16666666666666666,
+      "EM": 0.16666666666666666,
+      "EP": 0.16666666666666666
     },
     "self": {
-      "A": 0.3,
-      "M": 0.15,
-      "B": 0.15,
-      "P": 0.2,
-      "EM": 0.05,
-      "EP": 0.15
+      "A": 0.16666666666666666,
+      "M": 0.16666666666666666,
+      "B": 0.16666666666666666,
+      "P": 0.16666666666666666,
+      "EM": 0.16666666666666666,
+      "EP": 0.16666666666666666
     }
   },
   "weights": {
     "ally_present": 0.5,
-    "ally_target_rate": 0.4,
+    "ally_target_rate": 0.5,
     "foe_skill_rate": 0.3,
     "foe_skill_value": 0.8,
     "foe_cast_rate": 0.5,
@@ -209,7 +214,6 @@
     "adjacent_foes": 1.3,
     "trap_avoid_per_attack": 0.05,
     "protect_perms_per_rest": 0.1,
-    "rest_continue": 0.5,
     "perm_lifetime_actions": 9,
     "perm_lifetime_note": "a permanent skill with power die k is up for perm_lifetime_actions × k/6 actions on average (Rule 24 destroys low dice sooner) — the same die/6 durability scale as the effects validator",
     "cost": {
@@ -218,187 +222,193 @@
       "wait_cap": 6,
       "extra_card": 0.5,
       "permanent": 0.5,
-      "pointbuy_retry": 0
+      "pointbuy_retry": 0,
+      "locked_action": 0.3
     },
-    "cost_note": "C (card-actions) = card + wait·(1−p_job)/p_job (an instant that finds nothing returns to hand, Rule 8 / ruling 2026-11-12: it waits in a hand slot) + extra_card (Battle Trance spends a second action card) + permanent (held in the perms strip, exposed to Rule 24) + pointbuy_retry · E[retries] (0: pointBuyPermanent re-rolls in place, difficulty only lowers the die = durability, priced in V)"
+    "cost_note": "C (card-actions) = card + wait·(1−p_job)/p_job (an instant that finds nothing returns to hand, Rule 8 / ruling 2026-11-12: it waits in a hand slot) + extra_card (Battle Trance spends a second action card) + permanent (held in the perms strip, exposed to Rule 24) + pointbuy_retry · E[retries] (0: pointBuyPermanent re-rolls in place, difficulty only lowers the die = durability, priced in V) + locked_action · (actions_per_round − 1)/2 · (share of the codes a selfLock forbids) — Powerful Attack locks you to Attack for the rest of the round (on average one more action); an action whose choice is taken away is priced like a negated action (0.3)",
+    "reach_rate": 0.5,
+    "reach_note": "a skill with reach (Ranged Weapon) meets the foe 2 hexes away in reach_rate of its duels (equal weight: adjacent / one hex beyond)",
+    "swap_value": 0.3,
+    "swap_note": "Overrun: trading hexes with the adjacent foe (walk over and behind) — positional, like deny_move",
+    "actions_per_round": 3
   },
+  "calibrated_from": "data/skills.json + skills-rebalancing-check.mjs BUILTIN_FLAGS",
   "fit": {
-    "a": 0.880656,
-    "b": 0.068867,
+    "a": 0.235948,
+    "b": 0.339826,
     "n": 14,
-    "n_fit": 9,
+    "n_fit": 12,
     "model": "V = a + b·C (OLS, refit without |r−1|>0.6)"
   },
   "builtins": {
     "skill_barricade": {
-      "value": 1.554352,
+      "value": 0.823648,
       "actions": 1.5,
-      "ratio": 1.579695,
+      "ratio": 1.104549,
       "curve_verdict": "nerf",
-      "uses": 1.554348,
+      "uses": 0.823645,
       "per_use": 1
     },
     "skill_battle_trance": {
-      "value": 1.197055,
-      "actions": 2.121156,
-      "ratio": 1.165886,
+      "value": 1.156682,
+      "actions": 2.245392,
+      "ratio": 1.15785,
       "curve_verdict": "nerf",
       "uses": 1,
-      "per_use": 1.197055
+      "per_use": 1.156682
     },
     "skill_bluff": {
-      "value": 1.069411,
-      "actions": 1.044118,
-      "ratio": 1.122669,
+      "value": 0.84,
+      "actions": 1.05,
+      "ratio": 1.417088,
       "curve_verdict": "nerf",
       "uses": 1,
-      "per_use": 1.069412
+      "per_use": 0.84
     },
     "skill_counter_spell": {
-      "value": 0.640218,
-      "actions": 1.341716,
-      "ratio": 0.657946,
-      "curve_verdict": "boost",
+      "value": 0.645697,
+      "actions": 1.35,
+      "ratio": 0.929444,
+      "curve_verdict": "ok",
       "uses": 1,
-      "per_use": 0.640219
+      "per_use": 0.645697
     },
     "skill_disruption_move": {
-      "value": 2.04,
-      "actions": 2,
-      "ratio": 2.003162,
+      "value": 1.794343,
+      "actions": 1.75,
+      "ratio": 2.160183,
       "curve_verdict": "reject",
       "uses": 1,
-      "per_use": 2.04
+      "per_use": 1.794343
     },
     "skill_dodge": {
       "value": 1,
-      "actions": 1.318182,
-      "ratio": 1.029405,
-      "curve_verdict": "ok",
+      "actions": 1.607143,
+      "ratio": 1.278614,
+      "curve_verdict": "nerf",
       "uses": 1,
       "per_use": 1
     },
     "skill_force_shield": {
-      "value": 0.189541,
+      "value": 0.374662,
       "actions": 1.5,
-      "ratio": 0.192631,
-      "curve_verdict": "reject",
-      "uses": 0.436616,
-      "per_use": 0.434115
+      "ratio": 0.502439,
+      "curve_verdict": "boost",
+      "uses": 0.545455,
+      "per_use": 0.686883
     },
     "skill_grapple": {
       "value": 1.04,
-      "actions": 2,
-      "ratio": 1.02122,
+      "actions": 2.25,
+      "ratio": 1.039421,
       "curve_verdict": "ok",
       "uses": 1,
       "per_use": 1.04
     },
     "skill_intimidation": {
-      "value": 2.370589,
-      "actions": 1.240196,
-      "ratio": 2.453861,
+      "value": 1.9448,
+      "actions": 1.35,
+      "ratio": 2.799429,
       "curve_verdict": "reject",
       "uses": 1,
-      "per_use": 2.370588
+      "per_use": 1.9448
     },
     "skill_overrun": {
-      "value": 0.84,
-      "actions": 2,
-      "ratio": 0.824831,
-      "curve_verdict": "boost",
+      "value": 0.58,
+      "actions": 1,
+      "ratio": 1.00734,
+      "curve_verdict": "ok",
       "uses": 1,
-      "per_use": 0.84
+      "per_use": 0.58
     },
     "skill_powerful_attack": {
       "value": 1,
-      "actions": 1.044118,
-      "ratio": 1.049802,
-      "curve_verdict": "ok",
+      "actions": 1.3,
+      "ratio": 1.475531,
+      "curve_verdict": "nerf",
       "uses": 1,
       "per_use": 1
     },
     "skill_ranged_weapon": {
-      "value": 0.372774,
+      "value": 0.483215,
       "actions": 1.5,
-      "ratio": 0.378852,
+      "ratio": 0.648013,
       "curve_verdict": "boost",
-      "uses": 0.279573,
+      "uses": 0.431439,
       "per_use": 1
     },
     "skill_sanctuary": {
-      "value": 0.539999,
+      "value": 0.500254,
       "actions": 1.5,
-      "ratio": 0.548803,
+      "ratio": 0.670863,
       "curve_verdict": "boost",
-      "uses": 0.44,
-      "per_use": 1
+      "uses": 0.325126,
+      "per_use": 1.231068
     },
     "skill_taunt": {
-      "value": 0.374539,
+      "value": 0.606895,
       "actions": 1.5,
-      "ratio": 0.380646,
+      "ratio": 0.813874,
       "curve_verdict": "boost",
-      "uses": 0.374542,
-      "per_use": 1
+      "uses": 0.433497,
+      "per_use": 1.4
     }
   },
   "known_outliers": [
     {
       "id": "skill_intimidation",
-      "ratio": 2.453861,
+      "ratio": 2.799429,
       "curve_verdict": "reject"
     },
     {
       "id": "skill_disruption_move",
-      "ratio": 2.003162,
+      "ratio": 2.160183,
       "curve_verdict": "reject"
     },
     {
-      "id": "skill_barricade",
-      "ratio": 1.579695,
-      "curve_verdict": "nerf"
-    },
-    {
-      "id": "skill_battle_trance",
-      "ratio": 1.165886,
+      "id": "skill_powerful_attack",
+      "ratio": 1.475531,
       "curve_verdict": "nerf"
     },
     {
       "id": "skill_bluff",
-      "ratio": 1.122669,
+      "ratio": 1.417088,
       "curve_verdict": "nerf"
     },
     {
-      "id": "skill_overrun",
-      "ratio": 0.824831,
-      "curve_verdict": "boost"
+      "id": "skill_dodge",
+      "ratio": 1.278614,
+      "curve_verdict": "nerf"
     },
     {
-      "id": "skill_counter_spell",
-      "ratio": 0.657946,
+      "id": "skill_battle_trance",
+      "ratio": 1.15785,
+      "curve_verdict": "nerf"
+    },
+    {
+      "id": "skill_barricade",
+      "ratio": 1.104549,
+      "curve_verdict": "nerf"
+    },
+    {
+      "id": "skill_taunt",
+      "ratio": 0.813874,
       "curve_verdict": "boost"
     },
     {
       "id": "skill_sanctuary",
-      "ratio": 0.548803,
-      "curve_verdict": "boost"
-    },
-    {
-      "id": "skill_taunt",
-      "ratio": 0.380646,
+      "ratio": 0.670863,
       "curve_verdict": "boost"
     },
     {
       "id": "skill_ranged_weapon",
-      "ratio": 0.378852,
+      "ratio": 0.648013,
       "curve_verdict": "boost"
     },
     {
       "id": "skill_force_shield",
-      "ratio": 0.192631,
-      "curve_verdict": "reject"
+      "ratio": 0.502439,
+      "curve_verdict": "boost"
     }
-  ],
-  "calibrated_from": "data/skills.json + skills-rebalancing-check.mjs BUILTIN_FLAGS"
+  ]
 }

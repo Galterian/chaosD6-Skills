@@ -2,32 +2,83 @@
   "schema": "chaosd6.skill/1",
   "id": "skill_taunt",
   "name": "Taunt",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "source": {
     "collection": "skills",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "action_type": "B",
   "is_permanent": true,
   "point_buy_stat": "stat_vitality",
-  "text": "Nearby enemies cannot Attack anything besides you. Nearby enemies cannot use Block against you.",
+  "text": "Permanent. Nearby (adjacent) enemies cannot Attack anything besides you — every ally next to you is protected from their Attacks — and cannot use Block against you: their Block deals you no damage and does not stop your Attack. Weak alone, strong in a team.",
   "flags": {
     "action": "B",
     "permanent": true,
     "pointBuyStat": "vitality",
     "negating": false,
     "hooks": [
+      "block_in",
       "attack_target",
+      "attack_vs_block",
       "perm_landing",
       "perm_stats"
     ],
     "range": 1,
-    "tauntGuard": true
+    "tauntGuard": true,
+    "blockDenied": true
   },
   "uses": [
     "skills_std"
   ],
   "hooks": {
+    "block_in": {
+      "bool": {
+        "and": [
+          {
+            "has_perm": [
+              {
+                "var": "defender"
+              },
+              {
+                "var": "skill"
+              }
+            ]
+          },
+          {
+            "enemy_of": [
+              {
+                "var": "blocker"
+              },
+              {
+                "var": "defender"
+              }
+            ]
+          },
+          {
+            "<=": [
+              {
+                "dist": [
+                  {
+                    "var": "blocker"
+                  },
+                  {
+                    "var": "defender"
+                  }
+                ]
+              },
+              {
+                "skill_flag": [
+                  {
+                    "var": "skill"
+                  },
+                  "range"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
     "attack_target": {
       "some": [
         {
@@ -96,6 +147,54 @@
         },
         "t"
       ]
+    },
+    "attack_vs_block": {
+      "bool": {
+        "and": [
+          {
+            "has_perm": [
+              {
+                "var": "attacker"
+              },
+              {
+                "var": "skill"
+              }
+            ]
+          },
+          {
+            "enemy_of": [
+              {
+                "var": "attacker"
+              },
+              {
+                "var": "defender"
+              }
+            ]
+          },
+          {
+            "<=": [
+              {
+                "dist": [
+                  {
+                    "var": "attacker"
+                  },
+                  {
+                    "var": "defender"
+                  }
+                ]
+              },
+              {
+                "skill_flag": [
+                  {
+                    "var": "skill"
+                  },
+                  "range"
+                ]
+              }
+            ]
+          }
+        ]
+      }
     },
     "perm_landing": {
       "call": [
