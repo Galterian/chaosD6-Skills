@@ -1,0 +1,34 @@
+{
+  "format": "chaosd6-skills-validator-pin/1",
+  "validator": "skills-rebalancing-check",
+  "validator_version": "1.0.0",
+  "source_path": "game/tools/skills-rebalancing-check.mjs",
+  "source_sha256": "e01db086ae7184a2b15e8e0c1337cbae82d057a2ca8fa95bd6bd51197e7fddc5",
+  "core_path": "game/tools/rebalancing-core.mjs",
+  "core_version": "1.0.0",
+  "core_sha256": "50f2811a9fd3a35ae0344cbd4a7a5f13f0876a2bd111957cc5c1f4627d21a009",
+  "calibration_path": "game/tools/skills-rebalancing-calibration.json",
+  "calibration_sha256": "e76de4f224387ccb5dfb980f407bf6d41bb872ed4ab08c96169974518bdcfa68",
+  "audit": true,
+  "engines": {
+    "game/skills.mjs": "3a4d3cfd7edcc5c382f1d9e1ddf96fc8c1cfac5d9cef2936f385bac7fa3cc489",
+    "game/effect-engine.mjs": "e7f552d332d3fd865ab598b3a572e0b718ab75ef6c042f2e43e78a9bb9917657",
+    "game/skills-data/lib/skills_std.json": "55fb4adb0ea4f029945c782471e3f757589f350c1dd1a14d5ec85e89924bba3d"
+  },
+  "engines_sha256": "672ba3a235fb75d092fc70264cf61df9367efd96374c90aff864fbef707b1917",
+  "pin_id": "ceab32d04671cf3dbca9fd6587f0f3d912a5977c4b81a741095238b758b5f406",
+  "policy": {
+    "tolerance": 0.1,
+    "hard_cap_ratio": 2,
+    "hard_floor_ratio": 0.2,
+    "audit_slack": 0.02
+  },
+  "fit": {
+    "a": 0.880656,
+    "b": 0.068867
+  },
+  "accept": [
+    "ok"
+  ],
+  "notes": "A ref (skill branch) is accepted when its stamp.pin_id equals this pin_id and stamp.verdict is in `accept`. Peers re-run checkSkill on the def and compare stamp.def_sha256 + verdict; a different pin_id means a different validator — re-check, do not trust."
+}

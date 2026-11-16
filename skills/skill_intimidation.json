@@ -1,0 +1,44 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_intimidation",
+  "name": "Intimidation",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "P",
+  "is_permanent": false,
+  "point_buy_stat": null,
+  "text": "The enemy cannot use Attack until end of round.",
+  "flags": {
+    "action": "P",
+    "permanent": false,
+    "negating": true,
+    "hooks": [
+      "negate_action"
+    ],
+    "range": 1,
+    "negates": [
+      "A"
+    ],
+    "negate": {
+      "codes": [
+        "A"
+      ],
+      "who": "adjacent",
+      "mode": "ep"
+    },
+    "altCounterSkill": true
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "negate_action": {
+      "engine": "js",
+      "impl": "skills.mjs#negateAction",
+      "note": "pass 1 (after Bluff): every adjacent Attack → Empty Posture; with none, counters a non-permanent skill of an adjacent enemy. JS this milestone."
+    }
+  }
+}

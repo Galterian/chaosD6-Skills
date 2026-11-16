@@ -1,0 +1,42 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_disruption_move",
+  "name": "Disruption",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "M",
+  "is_permanent": false,
+  "point_buy_stat": null,
+  "text": "The enemy cannot use Posture; any Empty Posture is always played as Empty Move (enemy cannot emit non-instant effects).",
+  "flags": {
+    "action": "M",
+    "permanent": false,
+    "negating": true,
+    "hooks": [
+      "negate_kind"
+    ],
+    "negates": [
+      "P"
+    ],
+    "negate": {
+      "codes": [
+        "P"
+      ],
+      "who": "target",
+      "mode": "ep"
+    }
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "negate_kind": {
+      "engine": "js",
+      "impl": "skills.mjs#negateKind",
+      "note": "pass 2 (after Grapple): the target's Posture → Empty Posture. JS this milestone."
+    }
+  }
+}

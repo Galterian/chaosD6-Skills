@@ -1,0 +1,86 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_ranged_weapon",
+  "name": "Ranged weapon",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "A",
+  "is_permanent": true,
+  "point_buy_stat": "stat_matter",
+  "element": "elem_fire",
+  "text": "Permanent. On your Attack action, enemy's Block action does not cause you combat damage. Your Attack action does not trigger traps and the follow rule is not applied.",
+  "flags": {
+    "action": "A",
+    "permanent": true,
+    "pointBuyStat": "matter",
+    "negating": false,
+    "hooks": [
+      "block_in",
+      "block_cost",
+      "perm_landing",
+      "perm_stats"
+    ],
+    "blockImmune": true,
+    "trapImmune": true
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "block_in": {
+      "has_perm": [
+        {
+          "var": "defender"
+        },
+        {
+          "var": "skill"
+        }
+      ]
+    },
+    "block_cost": {
+      "if": [
+        {
+          "and": [
+            {
+              "code_is": [
+                {
+                  "var": "defender"
+                },
+                "B"
+              ]
+            },
+            {
+              "!": {
+                "bool": {
+                  "has_perm": [
+                    {
+                      "var": "attacker"
+                    },
+                    {
+                      "var": "skill"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        1,
+        0
+      ]
+    },
+    "perm_landing": {
+      "call": [
+        "perm_landing"
+      ]
+    },
+    "perm_stats": {
+      "call": [
+        "perm_stats"
+      ]
+    }
+  }
+}

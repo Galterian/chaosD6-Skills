@@ -1,0 +1,139 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_force_shield",
+  "name": "Force Shield",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "B",
+  "is_permanent": true,
+  "point_buy_stat": "stat_vitality",
+  "text": "Subtract the Shield permanent die value from effect damage before rounding. Destroy this permanent if effect damage is taken.",
+  "flags": {
+    "action": "B",
+    "permanent": true,
+    "pointBuyStat": "vitality",
+    "negating": false,
+    "hooks": [
+      "effect_in",
+      "effect_leg",
+      "end_round",
+      "perm_landing",
+      "perm_stats"
+    ],
+    "effectShield": true
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "effect_in": {
+      "if": [
+        {
+          "bool": {
+            "has_perm": [
+              {
+                "var": "defender"
+              },
+              {
+                "var": "skill"
+              }
+            ]
+          }
+        },
+        {
+          "or": [
+            {
+              "get": [
+                {
+                  "perm_power": {
+                    "var": "defender"
+                  }
+                },
+                {
+                  "var": "skill"
+                }
+              ]
+            },
+            0
+          ]
+        },
+        0
+      ]
+    },
+    "effect_leg": {
+      "if": [
+        {
+          "and": [
+            {
+              "bool": {
+                "var": "shield"
+              }
+            },
+            {
+              ">": [
+                {
+                  "round_div10": {
+                    "var": "sum"
+                  }
+                },
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "obj": {
+            "shield": 0,
+            "sum": {
+              "max": [
+                0,
+                {
+                  "-": [
+                    {
+                      "var": "sum"
+                    },
+                    {
+                      "var": "shield"
+                    }
+                  ]
+                }
+              ]
+            },
+            "spent": {
+              "var": "shield"
+            }
+          }
+        },
+        {
+          "obj": {
+            "shield": {
+              "var": "shield"
+            },
+            "sum": {
+              "var": "sum"
+            },
+            "spent": 0
+          }
+        }
+      ]
+    },
+    "end_round": {
+      "engine": "js",
+      "impl": "peer.mjs#endRound",
+      "note": "the die spent by effect_leg (spent → brokenShield) drops the permanent at the end of the round — peer bookkeeping, no rule left to run"
+    },
+    "perm_landing": {
+      "call": [
+        "perm_landing"
+      ]
+    },
+    "perm_stats": {
+      "call": [
+        "perm_stats"
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "hash": "sha256(canonical-json)",
+  "skills": {
+    "skill_barricade": "5f7e8349c7c9b64c8834f47d2a4a98f2e8f727a3d012f8c9cfe5ec23d9af5310",
+    "skill_battle_trance": "f7780e404cf1eb1f24e55a74810c409c4828153f8d1a78da50c30e8c0aafeaeb",
+    "skill_bluff": "b1f48f4d2f2763c7fb9de5bfe635867f4ebe18fd3b56653e87f3b6303aba761a",
+    "skill_counter_spell": "186ecc1bfa88cc5f302e682cfeb1861e82cf8c6bf7bc0007fb1213a9fdaf5843",
+    "skill_disruption_move": "cd721145b6335a7e9c08df98c43f9dfbbf037ddea02e4b5b38c5c0b24a51763f",
+    "skill_dodge": "e561afb2d042d2bb316bc130b924b632b8a535fe0ad8c8049480bf8b431ce74b",
+    "skill_force_shield": "87e3a874561a01bfa1b561e577158ed5ad156977525b67a722e3a63f2eb3cedb",
+    "skill_grapple": "656072d1be816bc7a03d29c0199c5a4d2f32e157bef05c2160103f9401ee9b65",
+    "skill_intimidation": "d14143e0698046b07e01fa0daa51ab4707052fb1ab66101ed7b79c94bfc8f9ec",
+    "skill_overrun": "f614182c34e61b7640805744ca49589fc8687372065f754663169005237b472d",
+    "skill_powerful_attack": "2bc9d1c19639222ab3477e6318728be655f2c0b7a54a4a46ffdc7d0f85db8923",
+    "skill_ranged_weapon": "8510fbb179465de0ccf41a87406c8af13d6651a31bdf23721a6425188c8d72ae",
+    "skill_sanctuary": "bd826c55d7344f5ed8d972ed4b8d031accc3e9f8a3b9463cc5d53abc3a105058",
+    "skill_taunt": "04212949b4e3ead50cc0065d5ea52d087c4aad3bb18cdf4dca0017d227d318e4"
+  },
+  "lib": {
+    "skills_std": "55fb4adb0ea4f029945c782471e3f757589f350c1dd1a14d5ec85e89924bba3d"
+  }
+}

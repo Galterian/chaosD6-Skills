@@ -1,0 +1,221 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_dodge",
+  "name": "Dodge / Evasion",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "M",
+  "is_permanent": false,
+  "point_buy_stat": null,
+  "text": "−1 combat damage (one less damage done to you this action).",
+  "flags": {
+    "action": "M",
+    "permanent": false,
+    "negating": true,
+    "hooks": [
+      "damage_in"
+    ],
+    "damageOff": 1
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "damage_in": {
+      "let": [
+        {
+          "hits": {
+            "filter": [
+              {
+                "map": [
+                  {
+                    "var": "damage"
+                  },
+                  {
+                    "if": [
+                      {
+                        "has_skill": [
+                          {
+                            "at": [
+                              {
+                                "var": "e"
+                              },
+                              0
+                            ]
+                          },
+                          {
+                            "var": "skill"
+                          }
+                        ]
+                      },
+                      {
+                        "let": [
+                          {
+                            "h": {
+                              "find": [
+                                {
+                                  "map": [
+                                    {
+                                      "at": [
+                                        {
+                                          "var": "e"
+                                        },
+                                        1
+                                      ]
+                                    },
+                                    {
+                                      "obj": {
+                                        "i": {
+                                          "var": "i"
+                                        },
+                                        "source": {
+                                          "var": "d.source"
+                                        },
+                                        "amount": {
+                                          "var": "d.amount"
+                                        },
+                                        "attacker": {
+                                          "var": "d.attacker"
+                                        }
+                                      }
+                                    },
+                                    "d"
+                                  ]
+                                },
+                                {
+                                  "and": [
+                                    {
+                                      "===": [
+                                        {
+                                          "var": "x.source"
+                                        },
+                                        "action"
+                                      ]
+                                    },
+                                    {
+                                      ">": [
+                                        {
+                                          "var": "x.amount"
+                                        },
+                                        0
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "x"
+                              ]
+                            }
+                          },
+                          {
+                            "if": [
+                              {
+                                "var": "h"
+                              },
+                              {
+                                "obj": {
+                                  "victim": {
+                                    "at": [
+                                      {
+                                        "var": "e"
+                                      },
+                                      0
+                                    ]
+                                  },
+                                  "i": {
+                                    "var": "h.i"
+                                  },
+                                  "amount": {
+                                    "-": [
+                                      {
+                                        "var": "h.amount"
+                                      },
+                                      1
+                                    ]
+                                  },
+                                  "attacker": {
+                                    "var": "h.attacker"
+                                  }
+                                }
+                              },
+                              null
+                            ]
+                          }
+                        ]
+                      },
+                      null
+                    ]
+                  },
+                  "e"
+                ]
+              },
+              {
+                "var": "y"
+              },
+              "y"
+            ]
+          }
+        },
+        {
+          "obj": {
+            "edits": {
+              "map": [
+                {
+                  "var": "hits"
+                },
+                {
+                  "obj": {
+                    "victim": {
+                      "var": "h.victim"
+                    },
+                    "i": {
+                      "var": "h.i"
+                    },
+                    "amount": {
+                      "var": "h.amount"
+                    }
+                  }
+                },
+                "h"
+              ]
+            },
+            "fx": {
+              "map": [
+                {
+                  "var": "hits"
+                },
+                {
+                  "obj": {
+                    "by": {
+                      "var": "h.victim"
+                    },
+                    "skill": {
+                      "var": "skill"
+                    },
+                    "on": {
+                      "var": "h.attacker"
+                    },
+                    "what": "damage",
+                    "building": {
+                      "from_building": [
+                        {
+                          "var": "h.victim"
+                        },
+                        {
+                          "var": "skill"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "h"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

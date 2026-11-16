@@ -1,0 +1,478 @@
+{
+  "schema": "chaosd6.skill-lib/1",
+  "id": "skills_std",
+  "version": "1.0.0",
+  "description": "Shared subroutines of the chaosD6 skills (S2) and the std programs of the per-skill hooks every skill has (rides, plan_target, perm_landing, perm_stats, disposition) — used when a definition has no program of its own for them.",
+  "defaults": {
+    "rides": "rides",
+    "plan_target": "plan_target",
+    "perm_landing": "perm_landing",
+    "perm_stats": "perm_stats",
+    "disposition": "disposition"
+  },
+  "subs": {
+    "pair_get": {
+      "params": [
+        "pairs",
+        "key"
+      ],
+      "doc": "value of the first [key, value] pair with this key (a marshalled Map), else undefined",
+      "body": {
+        "at": [
+          {
+            "find": [
+              {
+                "var": "pairs"
+              },
+              {
+                "===": [
+                  {
+                    "at": [
+                      {
+                        "var": "p"
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "var": "key"
+                  }
+                ]
+              },
+              "p"
+            ]
+          },
+          1
+        ]
+      }
+    },
+    "strip_stat": {
+      "params": [
+        "s"
+      ],
+      "doc": "'stat_matter' → 'matter' (String#replace(/^stat_/, ''))",
+      "body": {
+        "if": [
+          {
+            "starts_with": [
+              {
+                "var": "s"
+              },
+              "stat_"
+            ]
+          },
+          {
+            "slice": [
+              {
+                "var": "s"
+              },
+              5
+            ]
+          },
+          {
+            "var": "s"
+          }
+        ]
+      }
+    },
+    "rides": {
+      "params": [],
+      "doc": "a skill rides on its own action code, or — M / P skills — on an Empty option (EM / EP). Registers codes, req",
+      "body": {
+        "or": [
+          {
+            "in": [
+              {
+                "var": "req"
+              },
+              {
+                "var": "codes"
+              }
+            ]
+          },
+          {
+            "and": [
+              {
+                "or": [
+                  {
+                    "===": [
+                      {
+                        "var": "req"
+                      },
+                      "M"
+                    ]
+                  },
+                  {
+                    "===": [
+                      {
+                        "var": "req"
+                      },
+                      "P"
+                    ]
+                  }
+                ]
+              },
+              {
+                "or": [
+                  {
+                    "in": [
+                      "EP",
+                      {
+                        "var": "codes"
+                      }
+                    ]
+                  },
+                  {
+                    "in": [
+                      "EM",
+                      {
+                        "var": "codes"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "plan_target": {
+      "params": [],
+      "doc": "a Posture keeps its character target when one of the queued skills has flags.keepsTarget (Counter Spell). Registers skillIds",
+      "body": {
+        "some": [
+          {
+            "var": "skillIds"
+          },
+          {
+            "bool": {
+              "skill_flag": [
+                {
+                  "var": "id"
+                },
+                "keepsTarget"
+              ]
+            }
+          },
+          "id"
+        ]
+      }
+    },
+    "perm_landing": {
+      "params": [],
+      "doc": "one skill of perm_landing: {id, stat} when it is a permanent whose action code was played (playedCodes null = any), stat = its Rule 12 point-buy stat ('any' = my best, first on ties), else null. Registers skill, playedCodes, stats",
+      "body": {
+        "let": [
+          {
+            "sd": {
+              "skill_data": {
+                "var": "skill"
+              }
+            }
+          },
+          {
+            "if": [
+              {
+                "and": [
+                  {
+                    "bool": {
+                      "var": "sd.is_permanent"
+                    }
+                  },
+                  {
+                    "or": [
+                      {
+                        "is_null": {
+                          "var": "playedCodes"
+                        }
+                      },
+                      {
+                        "in": [
+                          {
+                            "var": "sd.action_type"
+                          },
+                          {
+                            "var": "playedCodes"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "obj": {
+                  "id": {
+                    "var": "skill"
+                  },
+                  "stat": {
+                    "if": [
+                      {
+                        "===": [
+                          {
+                            "var": "sd.point_buy_stat"
+                          },
+                          "any"
+                        ]
+                      },
+                      {
+                        "at": [
+                          {
+                            "sort_by": [
+                              [
+                                "vitality",
+                                "world",
+                                "matter",
+                                "will"
+                              ],
+                              {
+                                "desc": {
+                                  "get": [
+                                    {
+                                      "var": "stats"
+                                    },
+                                    {
+                                      "var": "s"
+                                    }
+                                  ]
+                                }
+                              },
+                              "s"
+                            ]
+                          },
+                          0
+                        ]
+                      },
+                      {
+                        "call": [
+                          "strip_stat",
+                          {
+                            "or": [
+                              {
+                                "var": "sd.point_buy_stat"
+                              },
+                              "stat_vitality"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              null
+            ]
+          }
+        ]
+      }
+    },
+    "perm_stats": {
+      "params": [],
+      "doc": "Rule 24: the stats the permanent can be destroyed by (point_buy_stat; 'any' = all four; none = vitality). Registers skill",
+      "body": {
+        "let": [
+          {
+            "st": {
+              "get": [
+                {
+                  "skill_data": {
+                    "var": "skill"
+                  }
+                },
+                "point_buy_stat"
+              ]
+            }
+          },
+          {
+            "if": [
+              {
+                "===": [
+                  {
+                    "var": "st"
+                  },
+                  "any"
+                ]
+              },
+              {
+                "quote": [
+                  "vitality",
+                  "world",
+                  "matter",
+                  "will"
+                ]
+              },
+              {
+                "bool": {
+                  "var": "st"
+                }
+              },
+              [
+                {
+                  "call": [
+                    "strip_stat",
+                    {
+                      "var": "st"
+                    }
+                  ]
+                }
+              ],
+              {
+                "quote": [
+                  "vitality"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "disposition": {
+      "params": [],
+      "doc": "Rule 8 card bookkeeping (user ruling 2026-11-12): permanent · negated · countered · spent · unused · judge. Registers skill, fx, self",
+      "body": {
+        "let": [
+          {
+            "sd": {
+              "skill_data": {
+                "var": "skill"
+              }
+            },
+            "onMe": {
+              "filter": [
+                {
+                  "var": "fx"
+                },
+                {
+                  "===": [
+                    {
+                      "var": "f.on"
+                    },
+                    {
+                      "var": "self"
+                    }
+                  ]
+                },
+                "f"
+              ]
+            }
+          },
+          {
+            "if": [
+              {
+                "bool": {
+                  "var": "sd.is_permanent"
+                }
+              },
+              "permanent",
+              {
+                "some": [
+                  {
+                    "var": "onMe"
+                  },
+                  {
+                    "in": [
+                      {
+                        "var": "skill"
+                      },
+                      {
+                        "or": [
+                          {
+                            "var": "f.ridden"
+                          },
+                          []
+                        ]
+                      }
+                    ]
+                  },
+                  "f"
+                ]
+              },
+              "negated",
+              {
+                "some": [
+                  {
+                    "var": "onMe"
+                  },
+                  {
+                    "in": [
+                      {
+                        "var": "skill"
+                      },
+                      {
+                        "or": [
+                          {
+                            "var": "f.countered"
+                          },
+                          []
+                        ]
+                      }
+                    ]
+                  },
+                  "f"
+                ]
+              },
+              "countered",
+              {
+                "bool": {
+                  "skill_flag": [
+                    {
+                      "var": "skill"
+                    },
+                    "negating"
+                  ]
+                }
+              },
+              {
+                "if": [
+                  {
+                    "some": [
+                      {
+                        "var": "fx"
+                      },
+                      {
+                        "and": [
+                          {
+                            "===": [
+                              {
+                                "var": "f.by"
+                              },
+                              {
+                                "var": "self"
+                              }
+                            ]
+                          },
+                          {
+                            "===": [
+                              {
+                                "var": "f.skill"
+                              },
+                              {
+                                "var": "skill"
+                              }
+                            ]
+                          },
+                          {
+                            "!": {
+                              "bool": {
+                                "var": "f.building"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "f"
+                    ]
+                  },
+                  "spent",
+                  "unused"
+                ]
+              },
+              "judge"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_barricade",
+  "name": "Barricade",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "B",
+  "is_permanent": true,
+  "point_buy_stat": "stat_vitality",
+  "text": "Nearby enemies cannot use Attack against you.",
+  "flags": {
+    "action": "B",
+    "permanent": true,
+    "pointBuyStat": "vitality",
+    "negating": false,
+    "hooks": [
+      "defend_in",
+      "perm_landing",
+      "perm_stats"
+    ],
+    "negates": [
+      "A",
+      "B"
+    ],
+    "immuneTo": [
+      "A",
+      "B"
+    ]
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "defend_in": {
+      "if": [
+        {
+          "and": [
+            {
+              "or": [
+                {
+                  "===": [
+                    {
+                      "var": "code"
+                    },
+                    "A"
+                  ]
+                },
+                {
+                  "===": [
+                    {
+                      "var": "code"
+                    },
+                    "B"
+                  ]
+                }
+              ]
+            },
+            {
+              "bool": {
+                "has_perm": [
+                  {
+                    "var": "defender"
+                  },
+                  {
+                    "var": "skill"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        0,
+        {
+          "var": "dmg"
+        }
+      ]
+    },
+    "perm_landing": {
+      "call": [
+        "perm_landing"
+      ]
+    },
+    "perm_stats": {
+      "call": [
+        "perm_stats"
+      ]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_battle_trance",
+  "name": "Battle trance",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "P",
+  "is_permanent": false,
+  "point_buy_stat": null,
+  "text": "You may use another action this turn; choose both or one for the calculations.",
+  "flags": {
+    "action": "P",
+    "permanent": false,
+    "negating": false,
+    "trance": true,
+    "hooks": [
+      "plan",
+      "trance_assign"
+    ]
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "trance_assign": {
+      "engine": "js",
+      "impl": "skills.mjs#tranceAssign",
+      "note": "writes r.vs (enemy → option) / r.played on every trance reveal. JS this milestone."
+    }
+  }
+}

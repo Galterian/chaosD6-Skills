@@ -1,0 +1,155 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_sanctuary",
+  "name": "Sanctuary",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "B",
+  "is_permanent": true,
+  "point_buy_stat": "any",
+  "text": "Permanent until doing action. You, any permanent, and any token you control (besides Sanctuary) are invincible until you emit or perform any action.",
+  "flags": {
+    "action": "B",
+    "permanent": true,
+    "pointBuyStat": "any",
+    "negating": false,
+    "hooks": [
+      "defend_in",
+      "end_round",
+      "perm_landing",
+      "perm_stats"
+    ],
+    "restInvincible": true
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "defend_in": {
+      "if": [
+        {
+          "and": [
+            {
+              "bool": {
+                "has_perm": [
+                  {
+                    "var": "defender"
+                  },
+                  {
+                    "var": "skill"
+                  }
+                ]
+              }
+            },
+            {
+              "===": [
+                {
+                  "??": [
+                    {
+                      "get": [
+                        {
+                          "call": [
+                            "pair_get",
+                            {
+                              "var": "byActor"
+                            },
+                            {
+                              "var": "defender"
+                            }
+                          ]
+                        },
+                        "declared"
+                      ]
+                    },
+                    "EP"
+                  ]
+                },
+                "EP"
+              ]
+            }
+          ]
+        },
+        0,
+        {
+          "var": "dmg"
+        }
+      ]
+    },
+    "end_round": {
+      "bool": {
+        "and": [
+          {
+            "var": "reveal"
+          },
+          {
+            "or": [
+              {
+                "!==": [
+                  {
+                    "??": [
+                      {
+                        "var": "reveal.declared"
+                      },
+                      {
+                        "var": "reveal.action"
+                      }
+                    ]
+                  },
+                  "EP"
+                ]
+              },
+              {
+                ">": [
+                  {
+                    "len": {
+                      "filter": [
+                        {
+                          "or": [
+                            {
+                              "var": "reveal.skills"
+                            },
+                            []
+                          ]
+                        },
+                        {
+                          "!==": [
+                            {
+                              "var": "id"
+                            },
+                            {
+                              "var": "reveal.buildingSkill"
+                            }
+                          ]
+                        },
+                        "id"
+                      ]
+                    }
+                  },
+                  0
+                ]
+              },
+              {
+                "bool": {
+                  "var": "reveal.effect"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "perm_landing": {
+      "call": [
+        "perm_landing"
+      ]
+    },
+    "perm_stats": {
+      "call": [
+        "perm_stats"
+      ]
+    }
+  }
+}

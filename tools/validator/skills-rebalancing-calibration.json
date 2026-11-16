@@ -1,0 +1,404 @@
+{
+  "format": "chaosd6-skills-rebalancing-calibration/1",
+  "description": "Inputs of tools/skills-rebalancing-check.mjs (S5). Hashed into the skills validator pin: changing ANY value changes the pin. 'weights' / 'mix' are hand-set (transparent, life-point equivalents); 'fit', 'builtins', 'known_outliers' are written by `node tools/skills-rebalancing-check.mjs calibrate --write`.",
+  "elements": {
+    "elem_vitality": "vitality",
+    "elem_souls": "world",
+    "elem_time": "world",
+    "elem_space": "world",
+    "elem_air": "matter",
+    "elem_water": "matter",
+    "elem_earth": "matter",
+    "elem_fire": "matter",
+    "elem_concentration": "will",
+    "elem_harmony": "will"
+  },
+  "pool_source": "data/characters.json active versions 2026-11-15 (the 12 playable characters), frozen here so a data change does not move verdicts silently — copied from tools/rebalancing-calibration.json (same frozen pool as the effects validator)",
+  "pool": [
+    {
+      "id": "char_oran_rief",
+      "vitality": 16,
+      "world": 10,
+      "matter": 3,
+      "will": 11
+    },
+    {
+      "id": "char_pride_guardian",
+      "vitality": 11,
+      "world": 16,
+      "matter": 10,
+      "will": 3
+    },
+    {
+      "id": "char_exuberant_firestroker",
+      "vitality": 6,
+      "world": 16,
+      "matter": 16,
+      "will": 2
+    },
+    {
+      "id": "char_razorfin_abolisher",
+      "vitality": 9,
+      "world": 9,
+      "matter": 20,
+      "will": 2
+    },
+    {
+      "id": "char_manor_skeleton",
+      "vitality": 15,
+      "world": 5,
+      "matter": 5,
+      "will": 15
+    },
+    {
+      "id": "char_rhox_bodyguard",
+      "vitality": 10,
+      "world": 10,
+      "matter": 10,
+      "will": 10
+    },
+    {
+      "id": "char_sanctum_gargoyle",
+      "vitality": 9,
+      "world": 17,
+      "matter": 7,
+      "will": 7
+    },
+    {
+      "id": "char_moonglove_changeling",
+      "vitality": 7,
+      "world": 2,
+      "matter": 10,
+      "will": 21
+    },
+    {
+      "id": "char_behemoth_herald",
+      "vitality": 18,
+      "world": 7,
+      "matter": 8,
+      "will": 7
+    },
+    {
+      "id": "char_cynder_pyromancer",
+      "vitality": 13,
+      "world": 7,
+      "matter": 15,
+      "will": 5
+    },
+    {
+      "id": "char_akki_coalfinger",
+      "vitality": 5,
+      "world": 10,
+      "matter": 20,
+      "will": 5
+    },
+    {
+      "id": "char_godtracker_jund",
+      "vitality": 6,
+      "world": 2,
+      "matter": 16,
+      "will": 16
+    }
+  ],
+  "codes": [
+    "A",
+    "M",
+    "B",
+    "P",
+    "EM",
+    "EP"
+  ],
+  "edge_dmg_source": "data/battle_system.json battle_system_core resolution_matrix + peer.mjs edgeDmg/mapDef (user ruling 2026-11-05: A vs P/EP/EM = 1), frozen 2026-11-16. edge_dmg[atk][def] = damage a strike of code atk deals a unit playing def. Strike rules (peer.mjs strike): EM / EP never strike; A / M strike their target only; P strikes every adjacent enemy; B scores only against an Attack aimed at the blocker.",
+  "edge_dmg": {
+    "A": {
+      "A": 1,
+      "M": 1,
+      "B": 0,
+      "P": 1,
+      "EM": 1,
+      "EP": 1
+    },
+    "M": {
+      "A": 0,
+      "M": 0,
+      "B": 1,
+      "P": 0,
+      "EM": 0,
+      "EP": 0
+    },
+    "B": {
+      "A": 1,
+      "M": 0,
+      "B": 0,
+      "P": 0,
+      "EM": 0,
+      "EP": 0
+    },
+    "P": {
+      "A": 0,
+      "M": 1,
+      "B": 0,
+      "P": 0,
+      "EM": 1,
+      "EP": 1
+    },
+    "EM": {
+      "A": 0,
+      "M": 0,
+      "B": 0,
+      "P": 0,
+      "EM": 0,
+      "EP": 0
+    },
+    "EP": {
+      "A": 0,
+      "M": 0,
+      "B": 0,
+      "P": 0,
+      "EM": 0,
+      "EP": 0
+    }
+  },
+  "policy": {
+    "tolerance": 0.1,
+    "hard_cap_ratio": 2,
+    "hard_floor_ratio": 0.2,
+    "fit_drop": 0.6,
+    "fit_min_keep": 5,
+    "caps": {
+      "attack_bonus": 2,
+      "damage_off": 2,
+      "negate_codes": 5
+    },
+    "audit": true,
+    "audit_pairs": 12,
+    "audit_slack": 0.02
+  },
+  "duel_note": "The unit of value is one action of an adjacent duel: me vs one foe, plus — with ally_present — one ally (plays Empty Posture) adjacent to the foe. The foe's code Y ~ mix.foe, my code is the skill's action_type (instants), ~ mix.self (a permanent's later actions), Empty Posture (Sanctuary) or two draws of mix.self (Battle Trance). The foe aims its Attack / Move at the ally with ally_target_rate, carries a non-permanent skill with foe_skill_rate (worth foe_skill_value to them), and when on P / EP casts a damage effect (ref_cast_elements, delta damage) with foe_cast_rate. Every (me, foe) ordered pair of the pool is enumerated exactly.",
+  "mix": {
+    "foe": {
+      "A": 0.3,
+      "M": 0.15,
+      "B": 0.15,
+      "P": 0.2,
+      "EM": 0.05,
+      "EP": 0.15
+    },
+    "self": {
+      "A": 0.3,
+      "M": 0.15,
+      "B": 0.15,
+      "P": 0.2,
+      "EM": 0.05,
+      "EP": 0.15
+    }
+  },
+  "weights": {
+    "ally_present": 0.5,
+    "ally_target_rate": 0.4,
+    "foe_skill_rate": 0.3,
+    "foe_skill_value": 0.8,
+    "foe_cast_rate": 0.5,
+    "ref_cast_elements": [
+      "elem_fire",
+      "elem_air"
+    ],
+    "ref_cast_note": "Lightning (fire + air), the worked example of the Counter Spell ruling",
+    "negated_action": 0.3,
+    "deny_move": 0.3,
+    "adjacent_foes": 1.3,
+    "trap_avoid_per_attack": 0.05,
+    "protect_perms_per_rest": 0.1,
+    "rest_continue": 0.5,
+    "perm_lifetime_actions": 9,
+    "perm_lifetime_note": "a permanent skill with power die k is up for perm_lifetime_actions × k/6 actions on average (Rule 24 destroys low dice sooner) — the same die/6 durability scale as the effects validator",
+    "cost": {
+      "card": 1,
+      "wait": 0.25,
+      "wait_cap": 6,
+      "extra_card": 0.5,
+      "permanent": 0.5,
+      "pointbuy_retry": 0
+    },
+    "cost_note": "C (card-actions) = card + wait·(1−p_job)/p_job (an instant that finds nothing returns to hand, Rule 8 / ruling 2026-11-12: it waits in a hand slot) + extra_card (Battle Trance spends a second action card) + permanent (held in the perms strip, exposed to Rule 24) + pointbuy_retry · E[retries] (0: pointBuyPermanent re-rolls in place, difficulty only lowers the die = durability, priced in V)"
+  },
+  "fit": {
+    "a": 0.880656,
+    "b": 0.068867,
+    "n": 14,
+    "n_fit": 9,
+    "model": "V = a + b·C (OLS, refit without |r−1|>0.6)"
+  },
+  "builtins": {
+    "skill_barricade": {
+      "value": 1.554352,
+      "actions": 1.5,
+      "ratio": 1.579695,
+      "curve_verdict": "nerf",
+      "uses": 1.554348,
+      "per_use": 1
+    },
+    "skill_battle_trance": {
+      "value": 1.197055,
+      "actions": 2.121156,
+      "ratio": 1.165886,
+      "curve_verdict": "nerf",
+      "uses": 1,
+      "per_use": 1.197055
+    },
+    "skill_bluff": {
+      "value": 1.069411,
+      "actions": 1.044118,
+      "ratio": 1.122669,
+      "curve_verdict": "nerf",
+      "uses": 1,
+      "per_use": 1.069412
+    },
+    "skill_counter_spell": {
+      "value": 0.640218,
+      "actions": 1.341716,
+      "ratio": 0.657946,
+      "curve_verdict": "boost",
+      "uses": 1,
+      "per_use": 0.640219
+    },
+    "skill_disruption_move": {
+      "value": 2.04,
+      "actions": 2,
+      "ratio": 2.003162,
+      "curve_verdict": "reject",
+      "uses": 1,
+      "per_use": 2.04
+    },
+    "skill_dodge": {
+      "value": 1,
+      "actions": 1.318182,
+      "ratio": 1.029405,
+      "curve_verdict": "ok",
+      "uses": 1,
+      "per_use": 1
+    },
+    "skill_force_shield": {
+      "value": 0.189541,
+      "actions": 1.5,
+      "ratio": 0.192631,
+      "curve_verdict": "reject",
+      "uses": 0.436616,
+      "per_use": 0.434115
+    },
+    "skill_grapple": {
+      "value": 1.04,
+      "actions": 2,
+      "ratio": 1.02122,
+      "curve_verdict": "ok",
+      "uses": 1,
+      "per_use": 1.04
+    },
+    "skill_intimidation": {
+      "value": 2.370589,
+      "actions": 1.240196,
+      "ratio": 2.453861,
+      "curve_verdict": "reject",
+      "uses": 1,
+      "per_use": 2.370588
+    },
+    "skill_overrun": {
+      "value": 0.84,
+      "actions": 2,
+      "ratio": 0.824831,
+      "curve_verdict": "boost",
+      "uses": 1,
+      "per_use": 0.84
+    },
+    "skill_powerful_attack": {
+      "value": 1,
+      "actions": 1.044118,
+      "ratio": 1.049802,
+      "curve_verdict": "ok",
+      "uses": 1,
+      "per_use": 1
+    },
+    "skill_ranged_weapon": {
+      "value": 0.372774,
+      "actions": 1.5,
+      "ratio": 0.378852,
+      "curve_verdict": "boost",
+      "uses": 0.279573,
+      "per_use": 1
+    },
+    "skill_sanctuary": {
+      "value": 0.539999,
+      "actions": 1.5,
+      "ratio": 0.548803,
+      "curve_verdict": "boost",
+      "uses": 0.44,
+      "per_use": 1
+    },
+    "skill_taunt": {
+      "value": 0.374539,
+      "actions": 1.5,
+      "ratio": 0.380646,
+      "curve_verdict": "boost",
+      "uses": 0.374542,
+      "per_use": 1
+    }
+  },
+  "known_outliers": [
+    {
+      "id": "skill_intimidation",
+      "ratio": 2.453861,
+      "curve_verdict": "reject"
+    },
+    {
+      "id": "skill_disruption_move",
+      "ratio": 2.003162,
+      "curve_verdict": "reject"
+    },
+    {
+      "id": "skill_barricade",
+      "ratio": 1.579695,
+      "curve_verdict": "nerf"
+    },
+    {
+      "id": "skill_battle_trance",
+      "ratio": 1.165886,
+      "curve_verdict": "nerf"
+    },
+    {
+      "id": "skill_bluff",
+      "ratio": 1.122669,
+      "curve_verdict": "nerf"
+    },
+    {
+      "id": "skill_overrun",
+      "ratio": 0.824831,
+      "curve_verdict": "boost"
+    },
+    {
+      "id": "skill_counter_spell",
+      "ratio": 0.657946,
+      "curve_verdict": "boost"
+    },
+    {
+      "id": "skill_sanctuary",
+      "ratio": 0.548803,
+      "curve_verdict": "boost"
+    },
+    {
+      "id": "skill_taunt",
+      "ratio": 0.380646,
+      "curve_verdict": "boost"
+    },
+    {
+      "id": "skill_ranged_weapon",
+      "ratio": 0.378852,
+      "curve_verdict": "boost"
+    },
+    {
+      "id": "skill_force_shield",
+      "ratio": 0.192631,
+      "curve_verdict": "reject"
+    }
+  ],
+  "calibrated_from": "data/skills.json + skills-rebalancing-check.mjs BUILTIN_FLAGS"
+}

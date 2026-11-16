@@ -1,0 +1,42 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_counter_spell",
+  "name": "Counter spell",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "P",
+  "is_permanent": false,
+  "point_buy_stat": null,
+  "text": "Counter target non-permanent skill; emit an element against the enemy, subtract the element stat from the enemy's stat.",
+  "flags": {
+    "action": "P",
+    "permanent": false,
+    "negating": true,
+    "keepsTarget": true,
+    "hooks": [
+      "plan_target",
+      "counter_pre"
+    ],
+    "range": 1,
+    "counterSkill": true,
+    "counterElement": true
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "plan_target": {
+      "call": [
+        "plan_target"
+      ]
+    },
+    "counter_pre": {
+      "engine": "js",
+      "impl": "skills.mjs#counterPre",
+      "note": "before every other skill: strips the target's non-permanent skills, then MY stat comes off one element of their cast (counterPen). JS this milestone."
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_taunt",
+  "name": "Taunt",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "B",
+  "is_permanent": true,
+  "point_buy_stat": "stat_vitality",
+  "text": "Nearby enemies cannot Attack anything besides you. Nearby enemies cannot use Block against you.",
+  "flags": {
+    "action": "B",
+    "permanent": true,
+    "pointBuyStat": "vitality",
+    "negating": false,
+    "hooks": [
+      "attack_target",
+      "perm_landing",
+      "perm_stats"
+    ],
+    "range": 1,
+    "tauntGuard": true
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "attack_target": {
+      "some": [
+        {
+          "reveals": []
+        },
+        {
+          "and": [
+            {
+              "!==": [
+                {
+                  "var": "t.actor"
+                },
+                {
+                  "var": "defender"
+                }
+              ]
+            },
+            {
+              "!==": [
+                {
+                  "var": "t.actor"
+                },
+                {
+                  "var": "attacker"
+                }
+              ]
+            },
+            {
+              "enemy_of": [
+                {
+                  "var": "attacker"
+                },
+                {
+                  "var": "t.actor"
+                }
+              ]
+            },
+            {
+              "bool": {
+                "has_perm": [
+                  {
+                    "var": "t.actor"
+                  },
+                  {
+                    "var": "skill"
+                  }
+                ]
+              }
+            },
+            {
+              "<=": [
+                {
+                  "dist": [
+                    {
+                      "var": "attacker"
+                    },
+                    {
+                      "var": "t.actor"
+                    }
+                  ]
+                },
+                1
+              ]
+            }
+          ]
+        },
+        "t"
+      ]
+    },
+    "perm_landing": {
+      "call": [
+        "perm_landing"
+      ]
+    },
+    "perm_stats": {
+      "call": [
+        "perm_stats"
+      ]
+    }
+  }
+}

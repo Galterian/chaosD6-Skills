@@ -1,0 +1,63 @@
+{
+  "format": "chaosd6-skills-tools/1",
+  "hash": "sha256 of the UTF-8 file with CRLF -> LF",
+  "game_dir": "game",
+  "layout": "`source` is the path in the chaosD6 tree; tools/check.mjs rebuilds that tree (plus lib/ → <game_dir>/skills-data/lib, skills/ → <game_dir>/skills-data/skills) in a temp dir",
+  "self": {
+    "files": {
+      "manifest.mjs": {
+        "sha256": "c46d66b09b5a983f4efbc93eb68d62627af5407a3d01cb7e65d92248d4a1830c",
+        "source": "game/tools/skills-repo-template/tools/manifest.mjs"
+      },
+      "check.mjs": {
+        "sha256": "8bc7f296f62b9ec215d441677f5c0e04628ec1a57c0ce64e5a75215620d83d31",
+        "source": "game/tools/skills-repo-template/tools/check.mjs"
+      },
+      "README.md": {
+        "sha256": "b812f120bd09a5d15eb8da13883560f2d57e7dd6bc610178924623c1c8322b02",
+        "source": "game/tools/skills-repo-template/tools/README.md"
+      }
+    }
+  },
+  "engine": {
+    "entry": {
+      "effect_engine": "effect-engine.mjs",
+      "skills": "skills.mjs"
+    },
+    "files": {
+      "effect-engine.mjs": {
+        "sha256": "e7f552d332d3fd865ab598b3a572e0b718ab75ef6c042f2e43e78a9bb9917657",
+        "source": "game/effect-engine.mjs"
+      },
+      "skill-engine.mjs": {
+        "sha256": "8cdf5d5caa4cdf980db1eb15f9551612c5f307c81228a9ad20725744ff771f8e",
+        "source": "game/skill-engine.mjs"
+      },
+      "skills.mjs": {
+        "sha256": "3a4d3cfd7edcc5c382f1d9e1ddf96fc8c1cfac5d9cef2936f385bac7fa3cc489",
+        "source": "game/skills.mjs"
+      }
+    }
+  },
+  "validator": {
+    "entry": "skills-rebalancing-check.mjs",
+    "pin_id": "ceab32d04671cf3dbca9fd6587f0f3d912a5977c4b81a741095238b758b5f406",
+    "files": {
+      "rebalancing-core.mjs": {
+        "sha256": "50f2811a9fd3a35ae0344cbd4a7a5f13f0876a2bd111957cc5c1f4627d21a009",
+        "source": "game/tools/rebalancing-core.mjs"
+      },
+      "skills-rebalancing-calibration.json": {
+        "sha256": "6ca789b4a11d1c1e5205ef2504f3e1a1735e5825c1776c32085b6000ba0ac263",
+        "source": "game/tools/skills-rebalancing-calibration.json"
+      },
+      "skills-rebalancing-check.mjs": {
+        "sha256": "e01db086ae7184a2b15e8e0c1337cbae82d057a2ca8fa95bd6bd51197e7fddc5",
+        "source": "game/tools/skills-rebalancing-check.mjs"
+      }
+    }
+  },
+  "packages": [],
+  "unresolved": [],
+  "tools_sha256": "24addeb867a0503af024023cc93de11f159cc49a82f39f85e23bf06b74d4dbfb"
+}

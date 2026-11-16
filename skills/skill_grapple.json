@@ -1,0 +1,42 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_grapple",
+  "name": "Grapple",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "A",
+  "is_permanent": false,
+  "point_buy_stat": null,
+  "text": "Negate enemy's Posture or Empty Posture (enemy may replace with another action; Empty Move is still possible). While sharing a tile, neither may use Posture or Empty Posture.",
+  "flags": {
+    "action": "A",
+    "permanent": false,
+    "negating": true,
+    "hooks": [
+      "negate_kind"
+    ],
+    "negates": [
+      "P"
+    ],
+    "negate": {
+      "codes": [
+        "P"
+      ],
+      "who": "target",
+      "mode": "ep"
+    }
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "negate_kind": {
+      "engine": "js",
+      "impl": "skills.mjs#negateKind",
+      "note": "pass 2: the target's Posture → Empty Posture, its riding instants return (negate). JS this milestone."
+    }
+  }
+}

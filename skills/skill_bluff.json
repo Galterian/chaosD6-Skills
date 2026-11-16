@@ -1,0 +1,44 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_bluff",
+  "name": "Bluff / Feint",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "M",
+  "is_permanent": false,
+  "point_buy_stat": null,
+  "text": "Negate enemy's action and replace it with Empty Posture.",
+  "flags": {
+    "action": "M",
+    "permanent": false,
+    "negating": true,
+    "hooks": [
+      "negate_action"
+    ],
+    "range": 1,
+    "negate": {
+      "codes": [
+        "A",
+        "M",
+        "B",
+        "P",
+        "EM"
+      ],
+      "who": "target",
+      "mode": "ep"
+    }
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "negate_action": {
+      "engine": "js",
+      "impl": "skills.mjs#negateAction",
+      "note": "pass 1: the target's action → Empty Posture (a trance collapses), riders return. JS this milestone."
+    }
+  }
+}

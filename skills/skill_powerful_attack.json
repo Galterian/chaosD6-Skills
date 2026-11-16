@@ -1,0 +1,65 @@
+{
+  "schema": "chaosd6.skill/1",
+  "id": "skill_powerful_attack",
+  "name": "Powerful attack",
+  "version": "1.0.0",
+  "source": {
+    "collection": "skills",
+    "version": "1.0.0"
+  },
+  "action_type": "A",
+  "is_permanent": false,
+  "point_buy_stat": null,
+  "text": "On successful attack: +1 damage; cannot perform any other action except Attack until end of round.",
+  "flags": {
+    "action": "A",
+    "permanent": false,
+    "negating": false,
+    "hooks": [
+      "attack_out"
+    ],
+    "attackBonus": 1
+  },
+  "uses": [
+    "skills_std"
+  ],
+  "hooks": {
+    "attack_out": {
+      "if": [
+        {
+          "and": [
+            {
+              ">=": [
+                {
+                  "var": "dmg"
+                },
+                1
+              ]
+            },
+            {
+              "has_skill": [
+                {
+                  "var": "attacker"
+                },
+                {
+                  "var": "skill"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "+": [
+            {
+              "var": "dmg"
+            },
+            1
+          ]
+        },
+        {
+          "var": "dmg"
+        }
+      ]
+    }
+  }
+}
